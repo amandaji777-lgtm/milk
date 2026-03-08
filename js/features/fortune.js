@@ -268,12 +268,16 @@ function renderWeeklyFortune(data, majorCards) {
                 <div class="tarot-face tarot-front">
                     <div class="tarot-pattern"><i class="fas fa-star-and-crescent"></i></div>
                 </div>
-                <div class="tarot-face tarot-back" style="background: linear-gradient(135deg, var(--secondary-bg), rgba(var(--accent-color-rgb), 0.05)); border: 2px solid rgba(var(--accent-color-rgb), 0.3);">
-                    <div class="tarot-visual ${isUpright ? '' : 'reversed'}" style="height:100px;">
-                        <i class="fas ${card.icon} tarot-icon-vector" style="font-size:52px; color: var(--accent-color);"></i>
+                <div class="tarot-face tarot-back" style="background: linear-gradient(135deg, var(--secondary-bg), rgba(var(--accent-color-rgb), 0.05)); border: 2px solid rgba(var(--accent-color-rgb), 0.3); padding: 14px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto;">
+                    <div class="tarot-visual ${isUpright ? '' : 'reversed'}" style="height:80px; flex-shrink:0;">
+                        <i class="fas ${card.icon} tarot-icon-vector" style="font-size:42px; color: var(--accent-color);"></i>
                     </div>
-                    <div>
-                        <div class="tarot-card-name" style="font-size:20px; font-weight: 700;">${card.name}</div>
+                    <div style="text-align:center; width:100%;">
+                        <div class="tarot-card-name" style="font-size:18px; font-weight: 700; margin-bottom:3px;">${card.name}</div>
+                        <div style="font-size:10px; color:var(--text-secondary); margin-bottom:6px;">${isUpright ? '正位' : '逆位'}</div>
+                        <div style="font-size:12px; color: var(--accent-color); font-weight:600; margin-bottom:6px;">「${card.keyword}」</div>
+                        <div style="margin-bottom:8px;">${starsHtml}</div>
+                        <div style="font-size:11px; color:var(--text-secondary); line-height:1.6; text-align:left;">${card.meaning}</div>
                     </div>
                 </div>
             </div>
@@ -829,7 +833,15 @@ function renderFavorites() {
         }) : '';
         const content = msg.text
             ? msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            : (msg.image ? '<i class="fas fa-image" style="color:var(--accent-color)"></i> 图片消息' : '');
+            : (msg.image ? `<img src="${msg.image}" style="max-width:100%;max-height:180px;border-radius:8px;display:block;margin-top:4px;cursor:pointer;" onclick="if(typeof viewImage==='function')viewImage('${msg.image.replace(/'/g,'\\\'')}')" loading="lazy">` : '');
+        // Build avatar HTML
+        const avatarEl = isUser
+            ? (typeof DOMElements !== 'undefined' ? DOMElements.me.avatar : null)
+            : (typeof DOMElements !== 'undefined' ? DOMElements.partner.avatar : null);
+        const avatarImg = avatarEl ? avatarEl.querySelector('img') : null;
+        const avatarHtml = avatarImg
+            ? `<img src="${avatarImg.src}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+            : `<div style="width:28px;height:28px;border-radius:50%;background:rgba(var(--accent-color-rgb),0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-user" style="font-size:11px;color:var(--accent-color);"></i></div>`;
         return `
             <div class="fav-item" style="
                 display:flex;flex-direction:column;gap:4px;
@@ -839,9 +851,10 @@ function renderFavorites() {
                 margin-bottom:10px;
                 position:relative;
             ">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    ${avatarHtml}
                     <span style="font-size:12px;font-weight:600;color:var(--accent-color);">${senderName}</span>
-                    <span style="font-size:11px;color:var(--text-secondary);">${ts}</span>
+                    <span style="font-size:11px;color:var(--text-secondary);margin-left:auto;padding-right:24px;">${ts}</span>
                 </div>
                 <div style="font-size:13px;color:var(--text-primary);line-height:1.5;word-break:break-word;">${content}</div>
                 <button class="fav-remove-btn" data-id="${msg.id}" style="
@@ -869,3 +882,81 @@ function renderFavorites() {
     });
 }
 window.renderFavorites = renderFavorites;
+
+/**
+ * _runMsgSearch - 消息搜索，显示头像
+ */
+window._runMsgSearch = function() {
+    const input = document.getElementById('msg-search-input');
+    const dateFrom = document.getElementById('msg-search-date-from');
+    const dateTo = document.getElementById('msg-search-date-to');
+    const resultsEl = document.getElementById('msg-search-results');
+    if (!resultsEl) return;
+
+    const q = (input ? input.value.trim() : '').toLowerCase();
+    const from = dateFrom && dateFrom.value ? new Date(dateFrom.value) : null;
+    const to = dateTo && dateTo.value ? new Date(dateTo.value + 'T23:59:59') : null;
+
+    if (!q && !from && !to) {
+        resultsEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:13px;">输入关键词或选择日期开始搜索</div>';
+        return;
+    }
+
+    const allMessages = typeof messages !== 'undefined' ? messages : [];
+    const results = allMessages.filter(m => {
+        if (m.type === 'system') return false;
+        const ts = m.timestamp ? new Date(m.timestamp) : null;
+        if (from && ts && ts < from) return false;
+        if (to && ts && ts > to) return false;
+        if (q && m.text && m.text.toLowerCase().includes(q)) return true;
+        if (q && !m.text && m.image) return false; // image-only, no text
+        return !q; // date-only filter
+    });
+
+    if (results.length === 0) {
+        resultsEl.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:13px;">未找到 "${q || '相关'}" 的消息</div>`;
+        return;
+    }
+
+    const myAvatarEl = typeof DOMElements !== 'undefined' ? DOMElements.me.avatar : null;
+    const partnerAvatarEl = typeof DOMElements !== 'undefined' ? DOMElements.partner.avatar : null;
+    const myImg = myAvatarEl ? myAvatarEl.querySelector('img') : null;
+    const partnerImg = partnerAvatarEl ? partnerAvatarEl.querySelector('img') : null;
+
+    function getAvatarHtml(isUser) {
+        const img = isUser ? myImg : partnerImg;
+        if (img) return `<img src="${img.src}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;">`;
+        return `<div style="width:28px;height:28px;border-radius:50%;background:rgba(var(--accent-color-rgb),0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-user" style="font-size:11px;color:var(--accent-color);"></i></div>`;
+    }
+
+    function highlight(text, keyword) {
+        if (!keyword) return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const escaped = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const re = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+        return escaped.replace(re, '<mark style="background:rgba(var(--accent-color-rgb),0.25);color:var(--accent-color);border-radius:2px;padding:0 1px;">$1</mark>');
+    }
+
+    resultsEl.innerHTML = results.slice(0, 100).map(msg => {
+        const isUser = msg.sender === 'user';
+        const senderName = isUser
+            ? ((typeof settings !== 'undefined' && settings.myName) || '我')
+            : ((typeof settings !== 'undefined' && settings.partnerName) || msg.sender || '对方');
+        const ts = msg.timestamp ? new Date(msg.timestamp).toLocaleString('zh-CN', {
+            month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        }) : '';
+        const content = msg.text
+            ? highlight(msg.text, q)
+            : (msg.image ? `<img src="${msg.image}" style="max-height:60px;border-radius:6px;display:block;margin-top:4px;" loading="lazy">` : '');
+        return `<div style="display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:12px;background:var(--primary-bg);border:1px solid var(--border-color);margin-bottom:8px;cursor:pointer;"
+            onclick="if(typeof showNotification==='function')showNotification('已定位消息', 'info', 1500); if(typeof scrollToQuotedMessage==='function'){var el=document.createElement('div');el.dataset.replyId='${msg.id}';scrollToQuotedMessage(el);}">
+            ${getAvatarHtml(isUser)}
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                    <span style="font-size:12px;font-weight:600;color:var(--accent-color);">${senderName}</span>
+                    <span style="font-size:11px;color:var(--text-secondary);">${ts}</span>
+                </div>
+                <div style="font-size:13px;color:var(--text-primary);line-height:1.5;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${content}</div>
+            </div>
+        </div>`;
+    }).join('') + (results.length > 100 ? `<div style="text-align:center;padding:10px;font-size:12px;color:var(--text-secondary);">仅显示前100条，共找到 ${results.length} 条</div>` : '');
+};

@@ -84,21 +84,28 @@ function showEmojiTab() {
         item.className = 'picker-item';
         item.innerHTML = `<img src="${src}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">`;
         item.onclick = () => {
-            addMessage({
-                id: Date.now(),
-                sender: 'user',
-                text: '',
-                timestamp: new Date(),
-                image: src,
-                status: 'sent',
-                type: 'normal'
-            });
-            playSound('send');
+            if (isBatchMode) {
+                batchMessages.push({ id: Date.now() + batchMessages.length, text: '', image: src });
+                updateBatchPreview();
+                showNotification('已添加到批量发送', 'success', 1200);
+            } else {
+                addMessage({
+                    id: Date.now(),
+                    sender: 'user',
+                    text: '',
+                    timestamp: new Date(),
+                    image: src,
+                    status: 'sent',
+                    type: 'normal'
+                });
+                playSound('send');
+                
+                const delayRange = settings.replyDelayMax - settings.replyDelayMin;
+                const randomDelay = settings.replyDelayMin + Math.random() * delayRange;
+                if (window._pendingReplyTimer) clearTimeout(window._pendingReplyTimer);
+                window._pendingReplyTimer = setTimeout(() => { window._pendingReplyTimer = null; simulateReply(); }, randomDelay);
+            }
             document.getElementById('user-sticker-picker').classList.remove('active');
-            
-            const delayRange = settings.replyDelayMax - settings.replyDelayMin;
-            const randomDelay = settings.replyDelayMin + Math.random() * delayRange;
-            setTimeout(simulateReply, randomDelay);
         };
         area.appendChild(item);
     });
@@ -142,7 +149,7 @@ function showPokeTab() {
         btn.onclick = () => {
             addMessage({
                 id: Date.now(), 
-                text: `✦ ${settings.myName} ${pokeText} ✦`, 
+                text: _formatPokeText(`${settings.myName} ${pokeText}`), 
                 timestamp: new Date(), 
                 type: 'system'
             });

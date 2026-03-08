@@ -117,6 +117,20 @@ if (target.classList.contains('delete-btn')) {
                 if (removeBtn) {
                     const index = removeBtn.closest('.batch-preview-item').dataset.index;
                     batchMessages.splice(index, 1); updateBatchPreview();
+                    return;
+                }
+                const editBtn = e.target.closest('.batch-preview-edit');
+                if (editBtn) {
+                    const item = editBtn.closest('.batch-preview-item');
+                    const index = parseInt(item.dataset.index);
+                    const msg = batchMessages[index];
+                    if (!msg || msg.image) return;
+                    const newText = prompt('编辑内容：', msg.text);
+                    if (newText !== null) {
+                        batchMessages[index].text = newText.trim();
+                        updateBatchPreview();
+                    }
+                    return;
                 }
                 const sendBtn = e.target.closest('.batch-send-btn');
                 if (sendBtn && !sendBtn.disabled) sendBatchMessages();
@@ -161,7 +175,7 @@ if (target.classList.contains('delete-btn')) {
             DOMElements.pokeModal.save.addEventListener('click', () => {
                 let pokeText = DOMElements.pokeModal.input.value.trim() || `${settings.myName} 拍了拍 ${settings.partnerName}`;
                 addMessage({
-                    id: Date.now(), text: `✦ ${pokeText} ✦`, timestamp: new Date(), type: 'system'
+                    id: Date.now(), text: _formatPokeText(pokeText), timestamp: new Date(), type: 'system'
                 });
                 hideModal(DOMElements.pokeModal.modal);
                 DOMElements.pokeModal.input.value = '';

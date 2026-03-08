@@ -773,6 +773,26 @@ function manageAutoSendTimer() {
                 item.classList.toggle('active', item.dataset.bubbleStyle === settings.bubbleStyle);
             });
 
+            // Sync setting pill toggles
+            const _pillSyncMap = {
+                '#reply-toggle': 'replyEnabled',
+                '#sound-toggle': 'soundEnabled',
+                '#read-receipts-toggle': 'readReceiptsEnabled',
+                '#typing-indicator-toggle': 'typingIndicatorEnabled',
+                '#read-no-reply-toggle': 'allowReadNoReply',
+                '#emoji-mix-toggle': 'emojiMixEnabled',
+                '#auto-send-toggle': 'autoSendEnabled'
+            };
+            for (const [sel, prop] of Object.entries(_pillSyncMap)) {
+                const el = document.querySelector(sel);
+                if (el) {
+                    const val = prop === 'emojiMixEnabled' ? (settings[prop] !== false) : !!settings[prop];
+                    el.classList.toggle('active', val);
+                }
+            }
+            const _immToggle = document.getElementById('immersive-toggle');
+            if (_immToggle) _immToggle.classList.toggle('active', document.body.classList.contains('immersive-mode'));
+
             renderMessages();
         };
 
@@ -972,14 +992,17 @@ function manageAutoSendTimer() {
                     messageHTML += `<div class="reply-indicator" data-reply-id="${msg.replyTo.id || ''}" style="cursor:pointer;" onclick="scrollToQuotedMessage(this)"><span class="reply-indicator-sender">${repliedSender}</span><span class="reply-indicator-text">${repliedText}</span></div>`;
                 }
 
+                const isImageOnly = !msg.text && !!msg.image;
                 let content = msg.text ? `<div>${msg.text.replace(/\n/g, '<br>')}</div>`: '';
-                if (msg.image) content += `<img src="${msg.image}" class="message-image" alt="图片" style="max-width: 200px; border-radius: 8px; margin-top: 8px; cursor: pointer;" onclick="viewImage('${msg.image}')">`;
+                if (msg.image) content += `<img src="${msg.image}" class="message-image${isImageOnly ? ' message-image-only' : ''}" alt="图片" style="max-width:${isImageOnly ? '100px' : '100px'}; border-radius: 12px;${!isImageOnly ? ' margin-top: 6px;' : ''} cursor: pointer;" onclick="viewImage('${msg.image}')">`;
                 messageHTML += content;
 
-
-
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `message message-${msg.sender === 'user' ? 'sent': 'received'} ${settings.bubbleStyle}`;
+                if (isImageOnly) {
+                    messageDiv.className = `message message-${msg.sender === 'user' ? 'sent': 'received'} message-image-bubble-none`;
+                } else {
+                    messageDiv.className = `message message-${msg.sender === 'user' ? 'sent': 'received'} ${settings.bubbleStyle}`;
+                }
                 messageDiv.innerHTML = messageHTML;
 
                 let actionsHTML = '';
@@ -1170,27 +1193,50 @@ actionsHTML += `<button class="meta-action-btn delete-btn" title="删除"><i cla
 if (!isBatchMode && type === 'normal') {
     const delayRange = settings.replyDelayMax - settings.replyDelayMin;
     const randomDelay = settings.replyDelayMin + Math.random() * delayRange;
-    
+
+    // Show typing indicator immediately (no delay)
+    if (settings.typingIndicatorEnabled) {
+        const tiWrapper = document.getElementById('typing-indicator-wrapper');
+        const tiLabel = document.getElementById('typing-indicator-label');
+        const tiAvatar = document.getElementById('typing-indicator-avatar');
+        if (tiLabel) tiLabel.textContent = (settings.partnerName || '对方') + ' 正在输入';
+        if (tiWrapper) { positionTypingIndicator(); tiWrapper.style.display = 'block'; }
+        if (tiAvatar) {
+            const partnerImg = DOMElements.partner.avatar.querySelector('img');
+            tiAvatar.innerHTML = partnerImg ? `<img src="${partnerImg.src}">` : '<i class="fas fa-user"></i>';
+        }
+        if (DOMElements.chatContainer) DOMElements.chatContainer.scrollTop = DOMElements.chatContainer.scrollHeight;
+    }
+
+    // Mark messages as read
     setTimeout(() => {
         let changed = false;
         messages.forEach(msg => {
             if (msg.sender === 'user' && msg.status !== 'read') {
-                msg.status = 'read'; 
+                msg.status = 'read';
                 changed = true;
             }
         });
-        if (changed) {
-            renderMessages(false); 
-            throttledSaveData();
-        }
+        if (changed) { renderMessages(false); throttledSaveData(); }
+    }, 400);
 
-        const shouldIgnore = settings.allowReadNoReply && (Math.random() < 0.5);
+    // Cancel any pending reply timer and reset it (so rapid messages don't stack replies)
+    if (window._pendingReplyTimer) clearTimeout(window._pendingReplyTimer);
+    window._pendingReplyTimer = null;
 
-        if (!shouldIgnore) {
-            simulateReply(); 
-        }
-
-    }, randomDelay);
+    const shouldIgnore = settings.allowReadNoReply && (Math.random() < 0.5);
+    if (!shouldIgnore) {
+        window._pendingReplyTimer = setTimeout(() => {
+            window._pendingReplyTimer = null;
+            simulateReply();
+        }, randomDelay);
+    } else {
+        window._pendingReplyTimer = setTimeout(() => {
+            window._pendingReplyTimer = null;
+            const _tiW = document.getElementById('typing-indicator-wrapper');
+            if (_tiW) { const _tiInner = _tiW.querySelector('.typing-indicator'); if (_tiInner) { _tiInner.classList.add('hiding'); setTimeout(() => { _tiW.style.display = 'none'; if (_tiInner) _tiInner.classList.remove('hiding'); }, 240); } else { _tiW.style.display = 'none'; } }
+        }, randomDelay * 0.4);
+    }
 }
 };
 
@@ -1215,11 +1261,11 @@ if (!isBatchMode && type === 'normal') {
             }
         }
 
-        function addToBatch() {
+        function addToBatch(imageOverride = null) {
             const text = DOMElements.messageInput.value.trim();
-            if (!text) return;
+            if (!text && !imageOverride) return;
             batchMessages.push({
-                id: Date.now() + batchMessages.length, text
+                id: Date.now() + batchMessages.length, text: text || '', image: imageOverride || null
             });
             DOMElements.messageInput.value = ''; DOMElements.messageInput.style.height = '46px';
             updateBatchPreview();
@@ -1229,22 +1275,42 @@ if (!isBatchMode && type === 'normal') {
             const previewContainer = DOMElements.batchPreview;
             let listHTML = '';
             if (batchMessages.length > 0) {
-                listHTML = batchMessages.map((msg, index) => `
-                <div class="batch-preview-item" data-index="${index}">
-                <span class="batch-preview-text">${msg.text}</span>
-                <button class="batch-preview-remove"><i class="fas fa-times"></i></button>
-                </div>`).join('');
+                listHTML = batchMessages.map((msg, index) => {
+                    const preview = msg.image
+                        ? `<img src="${msg.image}" style="height:36px;width:36px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:6px;">`
+                        : '';
+                    const label = msg.text
+                        ? `<span class="batch-preview-text">${msg.text}</span>`
+                        : `<span class="batch-preview-text" style="color:var(--text-secondary);font-style:italic;">图片</span>`;
+                    return `<div class="batch-preview-item" data-index="${index}">${preview}${label}<button class="batch-preview-edit" title="编辑"><i class="fas fa-pencil-alt"></i></button><button class="batch-preview-remove"><i class="fas fa-times"></i></button></div>`;
+                }).join('');
             } else {
                 listHTML = '<div style="text-align: center; color: var(--text-secondary); font-size: 14px; padding: 10px;">つ♡⊂</div>';
             }
 
             previewContainer.innerHTML = `
         <div class="batch-preview-title">我有很多的话想说…！</div>
+        <div class="batch-actions-top" style="display:flex;gap:6px;padding:4px 10px 0;"><label style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;background:var(--secondary-bg);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:12px;color:var(--text-secondary);"><i class="fas fa-image"></i>添加图片<input type="file" accept="image/*" style="display:none;" id="batch-image-input"></label></div>
         <div class="batch-preview-list">${listHTML}</div>
         <div class="batch-actions">
         <button class="batch-action-btn batch-cancel-btn">取消</button>
         <button class="batch-action-btn batch-send-btn" ${batchMessages.length === 0 ? 'disabled': ''}>发送全部 (${batchMessages.length})</button>
         </div>`;
+
+            // Wire image upload
+            const batchImgInput = document.getElementById('batch-image-input');
+            if (batchImgInput) {
+                batchImgInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > MAX_IMAGE_SIZE) { showNotification('图片超过5MB限制', 'warning'); return; }
+                    try {
+                        const base64 = await optimizeImage(file, 600, 0.8);
+                        addToBatch(base64);
+                    } catch(err) { showNotification('图片处理失败', 'error'); }
+                    e.target.value = '';
+                });
+            }
         }
 
         function sendBatchMessages() {
@@ -1253,7 +1319,7 @@ if (!isBatchMode && type === 'normal') {
             batchMessages.forEach((msg, index) => {
                 setTimeout(() => {
                     addMessage({
-                        id: Date.now() + index, sender: 'user', text: msg.text, timestamp: new Date(), status: 'sent', favorited: false, type: 'normal'
+                        id: Date.now() + index, sender: 'user', text: msg.text || '', image: msg.image || null, timestamp: new Date(), status: 'sent', favorited: false, type: 'normal'
                     });
                     playSound('send');
                 }, index * 300);
@@ -1311,7 +1377,7 @@ if (!isBatchMode && type === 'normal') {
                 renderMessages(false); throttledSaveData();
             }
 
-            showTypingIndicator();
+            // Don't call showTypingIndicator() a second time — already shown by sendMessage
 if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                 const currentPool = [
                     ...partnerPersonas
@@ -1380,12 +1446,35 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                 const delayRange = settings.replyDelayMax - settings.replyDelayMin;
                 delay += settings.replyDelayMin + Math.random() * delayRange;
                 setTimeout(() => {
-                    const replyPool = customReplies;
+                    // Bug fix 1: Filter out disabled individual items AND items from disabled groups
+                    let disabledItems = new Set();
+                    try {
+                        const raw = localStorage.getItem('disabledReplyItems');
+                        if (raw) disabledItems = new Set(JSON.parse(raw));
+                    } catch(e) {}
+                    const disabledGroups = (window.customReplyGroups || [])
+                        .filter(g => g.disabled)
+                        .map(g => g.id);
+                    const disabledGroupItems = new Set();
+                    if (disabledGroups.length > 0) {
+                        customReplies.forEach((reply) => {
+                            const itemGroup = (window.customReplyGroups || []).find(g =>
+                                g.items && g.items.includes(reply)
+                            );
+                            if (itemGroup && disabledGroups.includes(itemGroup.id)) {
+                                disabledGroupItems.add(reply);
+                            }
+                        });
+                    }
+                    const replyPool = customReplies.filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r));
                     const replyText = replyPool[Math.floor(Math.random() * replyPool.length)];
+
+                    // Bug fix 2: 30% chance partner sends a sticker image instead of (or after) text
+                    const shouldSendSticker = stickerLibrary && stickerLibrary.length > 0 && Math.random() < 0.3;
 
                     let finalText = replyText;
                     let separateEmoji = null;
-                    if (customEmojis && customEmojis.length > 0 && Math.random() < 0.3) {
+                    if (!shouldSendSticker && customEmojis && customEmojis.length > 0 && Math.random() < 0.3) {
                         const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
                         if (settings.emojiMixEnabled !== false) {
                             finalText = Math.random() < 0.5
@@ -1409,6 +1498,34 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                             : null,
                         type: 'normal'
                     });
+                    // Bug fix 4: Send background push notification
+                    if (typeof window._sendPartnerNotification === 'function') {
+                        window._sendPartnerNotification(settings.partnerName || '对方', finalText);
+                    }
+                    // Bug fix 5: Play sound for incoming message
+                    playSound('message');
+
+                    // Bug fix 2 (continued): send the sticker as a follow-up image message
+                    if (shouldSendSticker) {
+                        const randomSticker = stickerLibrary[Math.floor(Math.random() * stickerLibrary.length)];
+                        setTimeout(() => {
+                            addMessage({
+                                id: Date.now() + i + 2000,
+                                sender: settings.partnerName || '对方',
+                                text: '',
+                                timestamp: new Date(),
+                                image: randomSticker,
+                                status: 'received',
+                                favorited: false,
+                                note: null,
+                                type: 'normal'
+                            });
+                            playSound('message');
+                            if (typeof window._sendPartnerNotification === 'function') {
+                                window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
+                            }
+                        }, 400 + Math.random() * 600);
+                    }
 
                     if (separateEmoji) {
                         setTimeout(() => {

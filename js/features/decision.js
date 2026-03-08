@@ -228,12 +228,15 @@ function handleCoinToss() {
     if (sendBtn) sendBtn.style.display = 'none';
     const retryBtn = document.getElementById('retry-coin-toss');
     if (retryBtn) retryBtn.style.display = 'none';
+    // Clear any previously locked transform
+    if (DOMElements.animatedCoin) DOMElements.animatedCoin.style.transform = '';
     startCoinFlipAnimation();
 }
 window.handleCoinToss = handleCoinToss;
 
 /**
  * startCoinFlipAnimation - 执行硬币翻转动画并显示结果
+ * 修复：动画结束后硬币朝向与结果文字严格同步
  */
 function startCoinFlipAnimation() {
     const coin = DOMElements.animatedCoin;
@@ -249,24 +252,31 @@ function startCoinFlipAnimation() {
     const retryBtn = document.getElementById('retry-coin-toss');
     if (retryBtn) retryBtn.style.display = 'none';
 
-    // Random outcome
+    // Decide outcome FIRST, then build animation to match
     const isHeads = Math.random() < 0.5;
     const result = isHeads ? '正面 ☀️' : '反面 🌙';
     lastCoinResult = result;
 
-    // Animate: add flip class, then show result
-    coin.classList.remove('flipping-heads', 'flipping-tails');
-    void coin.offsetWidth; // force reflow
+    // Remove all animation classes and force reflow
+    coin.classList.remove('flipping-heads', 'flipping-tails', 'coin-show-front', 'coin-show-back');
+    void coin.offsetWidth;
+
+    // Add the correct flip animation
+    // flipping-heads ends at rotateY(2160deg) = 0 mod 360 → front face visible
+    // flipping-tails ends at rotateY(2340deg) = 180 mod 360 → back face visible
     coin.classList.add(isHeads ? 'flipping-heads' : 'flipping-tails');
 
+    // Animation duration is 3s; wait 3s + small buffer then show result
     setTimeout(() => {
         coin.classList.remove('flipping-heads', 'flipping-tails');
+        // Lock final rotation so the coin stays on the correct side
+        coin.style.transform = isHeads ? 'rotateY(0deg)' : 'rotateY(180deg)';
         if (resultText) resultText.textContent = result;
         overlay.classList.add('finished');
         if (sendBtn) sendBtn.style.display = '';
         if (retryBtn) retryBtn.style.display = '';
         if (typeof playSound === 'function') playSound('favorite');
-    }, 1200);
+    }, 3050);
 }
 window.startCoinFlipAnimation = startCoinFlipAnimation;
 
@@ -446,7 +456,7 @@ function initComboMenu() {
                 e.stopPropagation();
                 addMessage({
                     id: Date.now(),
-                    text: `✦ ${settings.myName} ${text} ✦`, 
+                    text: _formatPokeText(`${settings.myName} ${text}`), 
                     timestamp: new Date(),
                     type: 'system' 
                 });

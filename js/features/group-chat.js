@@ -6,18 +6,26 @@
 window.switchStatsTab = function(tab) {
     var statsPanel = document.getElementById('stats-panel');
     var favoritesPanel = document.getElementById('favorites-panel');
-    var statsBtn = document.getElementById('stats-tab-btn');
-    var favBtn = document.getElementById('favorites-tab-btn');
+    var searchPanel = document.getElementById('search-panel');
+    var allBtns = document.querySelectorAll('.stats-nav-btn');
+    allBtns.forEach(function(b) { b.classList.remove('active'); });
+    var activeBtn = document.querySelector('.stats-nav-btn[data-tab="' + tab + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (statsPanel) statsPanel.style.display = 'none';
+    if (favoritesPanel) favoritesPanel.style.display = 'none';
+    if (searchPanel) searchPanel.style.display = 'none';
+
     if (tab === 'stats') {
-        statsPanel.style.display = 'block';
-        favoritesPanel.style.display = 'none';
-        statsBtn.className = 'modal-btn modal-btn-primary';
-        favBtn.className = 'modal-btn modal-btn-secondary';
+        if (statsPanel) statsPanel.style.display = 'block';
+    } else if (tab === 'search') {
+        if (searchPanel) searchPanel.style.display = 'block';
+        setTimeout(function() {
+            var inp = document.getElementById('msg-search-input');
+            if (inp) inp.focus();
+        }, 100);
     } else {
-        statsPanel.style.display = 'none';
-        favoritesPanel.style.display = 'block';
-        statsBtn.className = 'modal-btn modal-btn-secondary';
-        favBtn.className = 'modal-btn modal-btn-primary';
+        if (favoritesPanel) favoritesPanel.style.display = 'block';
         if (typeof renderFavorites === 'function') renderFavorites();
     }
 };
@@ -566,3 +574,107 @@ window.startEditDgWeather = function(el) {
         }
     });
 
+
+// ─── Message Search (_runMsgSearch) ───────────────────────────────────────────
+window._runMsgSearch = function() {
+    var input = document.getElementById('msg-search-input');
+    var dateFrom = document.getElementById('msg-search-date-from');
+    var dateTo = document.getElementById('msg-search-date-to');
+    var resultsEl = document.getElementById('msg-search-results');
+    if (!input || !resultsEl) return;
+
+    var q = input.value.trim().toLowerCase();
+    var from = dateFrom && dateFrom.value ? new Date(dateFrom.value) : null;
+    var to = dateTo && dateTo.value ? new Date(dateTo.value + 'T23:59:59') : null;
+
+    var allMessages = (typeof messages !== 'undefined' ? messages : [])
+        .filter(function(m) { return m.type !== 'system'; });
+
+    var filtered = allMessages.filter(function(m) {
+        var matchText = !q || (m.text && m.text.toLowerCase().includes(q)) || (m.image && !q);
+        if (q && m.image && !m.text) matchText = false;
+        if (q) matchText = m.text && m.text.toLowerCase().includes(q);
+        var ts = m.timestamp ? new Date(m.timestamp) : null;
+        var matchFrom = !from || (ts && ts >= from);
+        var matchTo = !to || (ts && ts <= to);
+        return matchText && matchFrom && matchTo;
+    });
+
+    if (!q && !from && !to) {
+        resultsEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">输入关键词或选择日期开始搜索</div>';
+        return;
+    }
+
+    if (filtered.length === 0) {
+        resultsEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">未找到相关消息</div>';
+        return;
+    }
+
+    // Get avatars
+    var myAvatarEl = document.querySelector('#my-avatar img');
+    var partnerAvatarEl = document.querySelector('#partner-avatar img');
+    var myAvatar = myAvatarEl ? myAvatarEl.src : '';
+    var partnerAvatar = partnerAvatarEl ? partnerAvatarEl.src : '';
+    var myName = (typeof settings !== 'undefined' && settings.myName) || '我';
+    var partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
+
+    function highlight(text) {
+        if (!q || !text) return (text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var safe = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return safe.replace(new RegExp('(' + safeQ + ')', 'gi'), '<mark style="background:rgba(var(--accent-color-rgb,180,140,100),0.3);border-radius:2px;padding:0 1px;">$1</mark>');
+    }
+
+    resultsEl.innerHTML = filtered.map(function(msg) {
+        var isUser = msg.sender === 'user';
+        var name = isUser ? myName : partnerName;
+        var avatar = isUser ? myAvatar : partnerAvatar;
+
+        // Group chat member
+        if (!isUser && typeof groupChatSettings !== 'undefined' && groupChatSettings.enabled && groupChatSettings.members) {
+            var member = groupChatSettings.members.find(function(m) { return m.name === msg.sender; });
+            if (member) {
+                name = member.name;
+                avatar = member.avatar || '';
+            }
+        }
+
+        var ts = msg.timestamp ? new Date(msg.timestamp).toLocaleString('zh-CN', {
+            month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
+        }) : '';
+
+        var avatarHtml = avatar
+            ? '<img src="' + avatar + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
+            : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(var(--accent-color-rgb,180,140,100),0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-user" style="font-size:14px;color:var(--accent-color);"></i></div>';
+
+        var contentHtml = '';
+        if (msg.text) contentHtml += '<div style="font-size:13px;color:var(--text-primary);line-height:1.5;word-break:break-word;margin-top:3px;">' + highlight(msg.text) + '</div>';
+        if (msg.image) contentHtml += '<img src="' + msg.image + '" style="max-width:120px;max-height:90px;border-radius:8px;display:block;margin-top:5px;cursor:pointer;" onclick="if(typeof viewImage===\'function\')viewImage(\'' + msg.image.replace(/'/g,"\\'") + '\')" loading="lazy">';
+
+        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;background:var(--primary-bg);border:1px solid var(--border-color);margin-bottom:8px;cursor:pointer;" onclick="if(typeof scrollToMessage===\'function\')scrollToMessage(' + msg.id + ')">'
+            + avatarHtml
+            + '<div style="flex:1;min-width:0;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+            + '<span style="font-size:12px;font-weight:600;color:var(--accent-color);">' + name + '</span>'
+            + '<span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">' + ts + '</span>'
+            + '</div>'
+            + contentHtml
+            + '</div></div>';
+    }).join('');
+
+    // Result count
+    resultsEl.insertAdjacentHTML('afterbegin',
+        '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;padding:0 2px;">共找到 ' + filtered.length + ' 条结果</div>'
+    );
+};
+
+// Allow clicking search result to scroll to message in chat
+window.scrollToMessage = function(msgId) {
+    var el = document.querySelector('[data-id="' + msgId + '"]');
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'background 0.3s';
+        el.style.background = 'rgba(var(--accent-color-rgb,180,140,100),0.18)';
+        setTimeout(function() { el.style.background = ''; }, 1500);
+    }
+};
