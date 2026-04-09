@@ -151,7 +151,7 @@ function loadMoreHistory() {
                 nextStatusChange: 1 + Math.random() * 7,
                 fontSize: 16,
                 bubbleStyle: 'standard',
-                messageFontFamily: "Noto Serif SC",
+                messageFontFamily: "'Noto Serif SC', serif",
                 messageFontWeight: 400,
                 messageLineHeight: 1.5,
                 musicPlayerEnabled: false,
