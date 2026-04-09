@@ -272,8 +272,10 @@ function deduplicateContentArray(arr, baseSystemArray = []) {
 
 async function applyCustomFont(url) {
     if (!url || !url.trim()) {
-        document.documentElement.style.removeProperty('--font-family');
-        document.documentElement.style.removeProperty('--message-font-family');
+        const systemFont = '"PingFang SC", system-ui, -apple-system, sans-serif';
+        document.documentElement.style.setProperty('--font-family', systemFont);
+        document.documentElement.style.setProperty('--message-font-family', systemFont);
+        if (typeof settings !== 'undefined') settings.messageFontFamily = systemFont;
         return;
     }
     const fontName = 'UserCustomFont';
