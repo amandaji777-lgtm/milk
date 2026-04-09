@@ -1607,3 +1607,58 @@ window.tryShowDailyGreeting = function() {
         if (modal) modal.classList.remove('hidden');
     } catch(e) { console.warn('Daily greeting show error:', e); }
 };
+// 消息统计标签页切换
+function switchStatsTab(tab) {
+    // 获取各个面板
+    const statsPanel = document.getElementById('stats-panel');
+    const searchPanel = document.getElementById('search-panel');
+    const favoritesPanel = document.getElementById('favorites-panel');
+    const wordcloudPanel = document.getElementById('wordcloud-panel');
+    
+    // 先隐藏所有面板
+    if (statsPanel) statsPanel.style.display = 'none';
+    if (searchPanel) searchPanel.style.display = 'none';
+    if (favoritesPanel) favoritesPanel.style.display = 'none';
+    if (wordcloudPanel) wordcloudPanel.style.display = 'none';
+    
+    // 显示选中的面板
+    if (tab === 'stats') {
+        if (statsPanel) statsPanel.style.display = 'block';
+        if (typeof renderStatsContent === 'function') renderStatsContent();
+    } else if (tab === 'search') {
+        if (searchPanel) searchPanel.style.display = 'block';
+        if (typeof window._runMsgSearch === 'function') window._runMsgSearch();
+    } else if (tab === 'favorites') {
+        if (favoritesPanel) favoritesPanel.style.display = 'block';
+        if (typeof renderFavoritesList === 'function') renderFavoritesList();
+    } else if (tab === 'wordcloud') {
+        if (wordcloudPanel) wordcloudPanel.style.display = 'block';
+        if (typeof renderWordCloud === 'function') renderWordCloud();
+    }
+    
+    // 更新按钮样式
+    document.querySelectorAll('.stats-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const activeBtn = document.querySelector(`.stats-nav-btn[data-tab="${tab}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+}
+
+// 渲染收藏列表
+function renderFavoritesList() {
+    const container = document.getElementById('favorites-list');
+    if (!container) return;
+    
+    const favorites = messages.filter(m => m.favorited === true);
+    if (favorites.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">暂无收藏消息</div>';
+        return;
+    }
+    
+    container.innerHTML = favorites.map(msg => `
+        <div class="favorite-item" style="padding:12px;border-bottom:1px solid var(--border-color);">
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">${new Date(msg.timestamp).toLocaleString()}</div>
+            <div>${msg.text || '[图片消息]'}</div>
+        </div>
+    `).join('');
+}
