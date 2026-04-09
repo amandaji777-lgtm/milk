@@ -830,7 +830,7 @@ function manageAutoSendTimer() {
             if (typeof window.updateDynamicNames === 'function') window.updateDynamicNames();
             document.documentElement.style.setProperty('--font-size', `${settings.fontSize}px`);
             
-            const fontToUse = settings.messageFontFamily || "Noto Serif SC";
+            const fontToUse = settings.messageFontFamily || "'Noto Serif SC', serif";
             
             document.documentElement.style.setProperty('--message-font-family', fontToUse);
             document.documentElement.style.setProperty('--font-family', fontToUse);
