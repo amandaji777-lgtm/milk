@@ -623,7 +623,6 @@ const saveData = async () => {
 
     _backupCriticalData();
     }
-};
 
         function initializeRandomUI() {
 
@@ -1524,7 +1523,7 @@ if (!isBatchMode && type === 'normal') {
             });
             if (changed) {
                 renderMessages(false); throttledSaveData();
-            }
+            };
 
 if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                 const currentPool = [
