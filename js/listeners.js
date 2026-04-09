@@ -572,6 +572,7 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
 
             if (applyFontBtn) {
                 applyFontBtn.addEventListener('click', () => {
+                    applyCustomFont(settings.customFontUrl || "");
                     const url = fontUrlInput.value.trim();
                     settings.customFontUrl = url;
                     
