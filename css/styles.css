@@ -707,7 +707,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 10px;
-        font-family: 'Inter', 'Noto Serif SC', 'Cormorant Garamond', serif, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Inter', 'Noto Serif SC';
         font-weight: 350;
         letter-spacing: 3px;
         font-style: normal;
