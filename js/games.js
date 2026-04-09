@@ -516,9 +516,6 @@ function startLenormandDraw() {
 
     document.getElementById('lenormand-result').innerHTML = `
         ${questionDisplay}
-        <div style="text-align:center; font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
-            <i class="fas fa-moon"></i> 雷诺曼轻声说 · 爱能克服远距离
-        </div>
         <div class="lenormand-cards-row">${cardsHTML}</div>
         ${synthesisHTML}
     `;
