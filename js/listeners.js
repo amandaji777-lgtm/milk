@@ -2528,7 +2528,5 @@ window.exitCollapseMode = function() {
 window.sendQuickReply = function(text) {
     if (typeof sendMessage === 'function') sendMessage(text, 'normal');
 };
-
-}
 }
 }
