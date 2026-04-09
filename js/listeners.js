@@ -1078,16 +1078,6 @@ if (_soundUrlEl) _soundUrlEl.value = (settings.mySendCustomSoundUrl || '').trim(
                 soundVolSlider.addEventListener('change', throttledSaveData);
             }
 
-            const bindPresetSelect = (selectId, settingsKey) => {
-                const el = document.getElementById(selectId);
-                if (!el) return;
-                el.value = settings[settingsKey] || 'tone_default';
-                el.addEventListener('change', () => {
-                    settings[settingsKey] = el.value || 'tone_default';
-                    throttledSaveData();
-                });
-            };
-
             // 统一音效 URL 输入框 — 一个 URL 控制所有音效
 const soundUrlInput = document.getElementById('sound-my-send-custom-url');
 if (soundUrlInput) {
