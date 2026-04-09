@@ -455,17 +455,9 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
         if (el) el.value = val || '';
     };
 
-    setSelect('sound-my-send-preset', settings.mySendSoundPreset || 'tone_low');
-    setInput('sound-my-send-custom-url', (settings.mySendCustomSoundUrl || '').trim() || legacyCustom);
+    const _soundUrlEl = document.getElementById('sound-my-send-custom-url');
+if (_soundUrlEl) _soundUrlEl.value = (settings.mySendCustomSoundUrl || '').trim() || 'https://files.catbox.moe/njxgsz.mp3';
 
-    setSelect('sound-partner-message-preset', settings.partnerMessageSoundPreset || 'tone_low');
-    setInput('sound-partner-message-custom-url', (settings.partnerMessageCustomSoundUrl || '').trim() || legacyCustom);
-
-    setSelect('sound-my-poke-preset', settings.myPokeSoundPreset || 'tone_low');
-    setInput('sound-my-poke-custom-url', (settings.myPokeCustomSoundUrl || '').trim() || legacyCustom);
-
-    setSelect('sound-partner-poke-preset', settings.partnerPokeSoundPreset || 'tone_low');
-    setInput('sound-partner-poke-custom-url', (settings.partnerPokeCustomSoundUrl || '').trim() || legacyCustom);
     document.querySelectorAll('.time-fmt-opt').forEach(opt => {
         opt.classList.toggle('active', opt.dataset.fmt === (settings.timeFormat || 'HH:mm'));
     });
@@ -1096,36 +1088,28 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 });
             };
 
-            bindPresetSelect('sound-my-send-preset', 'mySendSoundPreset');
-            bindPresetSelect('sound-partner-message-preset', 'partnerMessageSoundPreset');
-            bindPresetSelect('sound-my-poke-preset', 'myPokeSoundPreset');
-            bindPresetSelect('sound-partner-poke-preset', 'partnerPokeSoundPreset');
+            // 统一音效 URL 输入框 — 一个 URL 控制所有音效
+const soundUrlInput = document.getElementById('sound-my-send-custom-url');
+if (soundUrlInput) {
+    soundUrlInput.addEventListener('change', () => {
+        const url = soundUrlInput.value.trim();
+        settings.mySendCustomSoundUrl = url;
+        settings.partnerMessageCustomSoundUrl = url;
+        settings.myPokeCustomSoundUrl = url;
+        settings.partnerPokeCustomSoundUrl = url;
+        // 如果有 URL 就用 URL，没有就走 kakaotalk 预设
+        const preset = url ? 'tone_low' : 'kakaotalk';
+        settings.mySendSoundPreset = preset;
+        settings.partnerMessageSoundPreset = preset;
+        settings.myPokeSoundPreset = preset;
+        settings.partnerPokeSoundPreset = preset;
+        throttledSaveData();
+    });
+}
 
-            const bindCustomUrlInput = (inputId, settingsKey) => {
-                const el = document.getElementById(inputId);
-                if (!el) return;
-                el.addEventListener('change', () => {
-                    settings[settingsKey] = el.value.trim();
-                    throttledSaveData();
-                });
-            };
-
-            bindCustomUrlInput('sound-my-send-custom-url', 'mySendCustomSoundUrl');
-            bindCustomUrlInput('sound-partner-message-custom-url', 'partnerMessageCustomSoundUrl');
-            bindCustomUrlInput('sound-my-poke-custom-url', 'myPokeCustomSoundUrl');
-            bindCustomUrlInput('sound-partner-poke-custom-url', 'partnerPokeCustomSoundUrl');
-
-            const btnMySend = document.getElementById('test-sound-my-send-btn');
-            if (btnMySend) btnMySend.addEventListener('click', () => playSound('my_send'));
-
-            const btnPartnerMsg = document.getElementById('test-sound-partner-message-btn');
-            if (btnPartnerMsg) btnPartnerMsg.addEventListener('click', () => playSound('partner_message'));
-
-            const btnMyPoke = document.getElementById('test-sound-my-poke-btn');
-            if (btnMyPoke) btnMyPoke.addEventListener('click', () => playSound('my_poke'));
-
-            const btnPartnerPoke = document.getElementById('test-sound-partner-poke-btn');
-            if (btnPartnerPoke) btnPartnerPoke.addEventListener('click', () => playSound('partner_poke'));
+// 试听按钮
+const btnMySend = document.getElementById('test-sound-my-send-btn');
+if (btnMySend) btnMySend.addEventListener('click', () => playSound('send'));
 
             document.querySelectorAll('.time-fmt-opt').forEach(opt => {
                 opt.classList.toggle('active', opt.dataset.fmt === (settings.timeFormat || 'HH:mm'));
