@@ -506,4 +506,28 @@ async function importAllData(file) {
 
         try {
             const importedJson = typeof data === 'string' ? data : JSON.stringify(data);
-           
+           if (!selectedCats || selectedCats.length === 0) return;
+
+        showNotification('正在恢复数据…', 'info', 3000);
+        await ChatBackup.applyBackupToStorage(data, {
+            selective: true,
+            selectedCategoryIds: selectedCats,
+            categories
+        });
+
+        try {
+            const importedJson = typeof data === 'string' ? data : JSON.stringify(data);
+            // 保存导入的 JSON 到本地存储（如果需要）
+            if (importedJson) {
+                localStorage.setItem('last_imported_backup', importedJson);
+            }
+            showNotification('全量备份导入完成', 'success');
+        } catch (innerErr) {
+            console.error('导入处理内部错误:', innerErr);
+            showNotification('导入处理失败: ' + (innerErr.message || '未知错误'), 'error');
+        }
+    } catch (err) {
+        console.error('导入备份失败:', err);
+        showNotification('导入备份失败: ' + (err.message || '请检查文件格式'), 'error');
+    }
+}
