@@ -145,15 +145,15 @@ function deduplicateContentArray(arr, baseSystemArray = []) {
                     ? customUrlByCategory.trim()
                     : legacyCustomUrl;
 
-                const KAKAO_TALK_URL = 'https://image.uglycat.cc/jl5xf9.mp3';
+                const KAKAO_TALK_URL = 'https://files.catbox.moe/njxgsz.mp3';
 
                 // 预设音效（无音效 / kakaoTalk）需要优先级高于自定义 URL
                 const presetId = (() => {
                     if (!category) return '';
-                    if (category === 'my_send') return settings.mySendSoundPreset || 'tone_low';
-                    if (category === 'partner_message') return settings.partnerMessageSoundPreset || 'tone_low';
-                    if (category === 'my_poke') return settings.myPokeSoundPreset || 'tone_low';
-                    if (category === 'partner_poke') return settings.partnerPokeSoundPreset || 'tone_low';
+                    if (category === 'my_send') return settings.mySendSoundPreset || 'kakaotalk';
+                    if (category === 'partner_message') return settings.partnerMessageSoundPreset || 'kakaotalk';
+                    if (category === 'my_poke') return settings.myPokeSoundPreset || 'kakaotalk';
+                    if (category === 'partner_poke') return settings.partnerPokeSoundPreset || 'kakaotalk';
                     return 'tone_low';
                 })();
 
