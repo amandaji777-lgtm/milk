@@ -207,6 +207,14 @@
     <div class="input-area-wrapper">
         <div class="batch-preview" id="batch-preview"></div>
         <div id="reply-preview-container"></div>
+        <div id="quick-reply-bar" style="display:flex;gap:6px;padding:6px 10px 2px;flex-wrap:wrap;">
+    <button onclick="sendQuickReply('是')" style="padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);">是</button>
+    <button onclick="sendQuickReply('否')" style="padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);">否</button>
+    <button onclick="sendQuickReply('对')" style="padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);">对</button>
+    <button onclick="sendQuickReply('不对')" style="padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);">不对</button>
+    <button onclick="sendQuickReply('好的')" style="padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);">好的</button>
+    <button onclick="sendQuickReply('嗯嗯')" style="padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);">嗯嗯</button>
+</div>
         <div id="collapsed-extras-panel" style="display:none;">
             <div class="collapsed-extras-inner" style="padding:12px; background:var(--secondary-bg); border-top:1px solid var(--border-color);">
                 <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
