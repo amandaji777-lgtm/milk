@@ -30,24 +30,6 @@
 </head>
 <body>
 
-<div id="tour-overlay" class="tour-overlay">
-    <div id="tour-highlight-box" class="tour-highlight-box"></div>
-    <div id="tour-popover" class="tour-popover">
-        <div class="tour-popover-header">
-            <span id="tour-title" class="tour-title"></span>
-            <span id="tour-step-counter" class="tour-step-counter"></span>
-        </div>
-        <div id="tour-content" class="tour-popover-content"></div>
-        <div class="tour-popover-footer">
-            <button id="tour-skip-btn" class="tour-btn tour-btn-skip">跳过</button>
-            <div class="tour-navigation">
-                <button id="tour-prev-btn" class="tour-btn"><i class="fas fa-arrow-left"></i> 上一步</button>
-                <button id="tour-next-btn" class="tour-btn tour-btn-primary">下一步 <i class="fas fa-arrow-right"></i></button>
-            </div>
-        </div>
-    </div>
-</div>
-
     <div class="welcome-animation" id="welcome-animation">
         <div class="welcome-bg-gradient"></div>
         <div class="stars-container" id="stars-container"></div>
@@ -101,9 +83,7 @@
             </div>
             <div class="header-actions">
                 <button id="session-manager-btn" class="action-btn" title="会话管理"><i class="fas fa-comments"></i></button>
-                <button id="group-chat-btn" class="action-btn" title="群聊设置"><i class="fas fa-users"></i></button>
                 <button id="daily-greeting-btn" class="action-btn" title="今日公告" onclick="reopenDailyGreeting()"><i class="fas fa-newspaper"></i></button>
-                <button id="theme-toggle" class="action-btn" title="切换主题"><i class="fas fa-moon"></i></button>
                 <button id="settings-btn" class="action-btn" title="设置"><i class="fas fa-cog"></i></button>
             </div>
              <div class="user-info">
@@ -457,27 +437,6 @@
     </div>
     </div>
 </div>
-<div class="modal" id="group-chat-modal">
-    <div class="modal-content">
-        <div class="modal-title">
-            <i class="fas fa-users"></i><span>群聊设置</span>
-        </div>
-
-        <div class="settings-section">
-            <div class="settings-section-title"><i class="fas fa-toggle-on"></i>群聊模式</div>
-            <div id="group-mode-toggle" style="display:flex;align-items:center;gap:12px;background:var(--primary-bg);border:1px solid var(--border-color);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
-                <div style="width:36px;height:36px;border-radius:50%;background:rgba(var(--accent-color-rgb),0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i id="group-mode-icon" class="fas fa-users" style="font-size:18px;color:var(--accent-color);"></i>
-                </div>
-                <div style="flex:1;">
-                    <div style="font-size:13px;font-weight:600;color:var(--text-primary);">群聊模式</div>
-                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;" id="group-mode-status">已关闭 — 点击开启</div>
-                </div>
-                <div id="group-mode-pill" style="width:44px;height:24px;border-radius:24px;background:var(--border-color);position:relative;transition:background 0.3s;flex-shrink:0;">
-                    <div id="group-mode-knob" style="position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left 0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
-                </div>
-            </div>
-        </div>
 
         <div class="settings-section" id="group-display-section" style="display:none;">
             <div class="settings-section-title"><i class="fas fa-eye"></i>显示选项</div>
@@ -1913,61 +1872,7 @@
         </div>
     </div>
 
-    <div class="player-container" id="player">
-        <div class="mini-view" id="mini-view" title="点击展开">
-            <div class="vinyl-record" id="vinyl-record-visual">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 13l-4-4h8l-4 4z" /></svg>
-            </div>
-        </div>
-        <div class="full-view">
-            <div class="minimize-btn" id="minimize-btn" title="收起">
-                <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" /></svg>
-            </div>
-            <button id="upload-cover-btn" style="position: absolute; top: 12px; left: 15px; background: none; border: 1px dashed var(--border-color); color: var(--text-secondary); cursor: pointer; opacity: 0.7; z-index: 10; width: 24px; height: 24px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:12px;" title="更换专辑封面">
-                <i class="fas fa-camera"></i>
-            </button>
-            <input type="file" id="cover-input" accept="image/*" style="display: none;">
-            <div class="track-info">
-                <div class="track-name" id="music-title">Loading...</div>
-                <div class="track-sub" id="music-subtitle">...</div>
-            </div>
-            <div class="progress-wrapper" id="progress-area">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <div class="controls">
-                <button class="btn" id="mode-btn" title="切换模式">
-                    <svg id="icon-loop" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg>
-                    <svg id="icon-single" style="display:none" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/><text x="12" y="14" text-anchor="middle" font-size="7" fill="currentColor" font-weight="bold">1</text></svg>
-                    <svg id="icon-shuffle" style="display:none" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg>
-                </button>
-                <button class="btn" id="prev-btn"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg></button>
-                <button class="btn btn-main" id="play-btn">
-                    <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                    <svg id="icon-pause" style="display:none" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                </button>
-                <button class="btn" id="next-btn"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
-                <button class="btn" id="list-btn"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" /></svg></button>
-            </div>
-        </div>
-    </div>
-    <div class="playlist-popup" id="playlist"></div>
-    <audio id="audio"></audio>
-
-    <div class="modal" id="add-song-modal">
-        <div class="modal-content">
-            <div class="modal-title">
-                <i class="fas fa-music"></i><span>添加自定义歌曲</span>
-            </div>
-            <input type="text" class="modal-input" id="new-song-title" placeholder="歌曲名称 (例如: 这里的风景)">
-            <input type="text" class="modal-input" id="new-song-sub" placeholder="歌手/备注 (例如: 你的名字)">
-            <input type="text" class="modal-input" id="new-song-url" placeholder="音频链接 (mp3/m4a 链接)">
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" id="cancel-add-song">取消</button>
-                <button class="modal-btn modal-btn-primary" id="confirm-add-song">添加播放</button>
-            </div>
-        </div>
-    </div>
-
+    
 
 <div id="daily-greeting-modal" class="hidden">
     <div class="daily-greeting-card" id="daily-greeting-card">
