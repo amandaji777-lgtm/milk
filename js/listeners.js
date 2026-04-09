@@ -6,7 +6,7 @@ function setupEventListeners() {
         initHeaderAndSettingsListeners();
         initDataManagementListeners();
         initNewFeatureListeners();
-        setupTutorialListeners();
+        // setupTutorialListeners();  // ← 加上 // 注释掉
         initMoodListeners();
         initDecisionModule(); 
         initAnniversaryModule(); 
@@ -19,7 +19,6 @@ function setupEventListeners() {
         console.error("事件绑定过程中发生错误:", e);
     }
 }
-
 function initChatActionListeners() {
             DOMElements.chatContainer.addEventListener('click', (e) => {
 
