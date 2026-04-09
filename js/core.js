@@ -622,7 +622,7 @@ const saveData = async () => {
     }
 
     _backupCriticalData();
-    }
+    };
 
         function initializeRandomUI() {
 
