@@ -340,7 +340,7 @@ const loadData = async () => {
         }
         document.body.classList.toggle('show-partner-name', showPartnerNameInChat);
         try {
-            if (settings.customFontUrl) applyCustomFont(settings.customFontUrl);
+            applyCustomFont(settings.customFontUrl || "");
             if (settings.customBubbleCss) applyCustomBubbleCss(settings.customBubbleCss);
             if (settings.customGlobalCss) applyGlobalThemeCss(settings.customGlobalCss);
         } catch(e) { console.warn("样式应用失败", e); }
