@@ -455,9 +455,6 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
         if (el) el.value = val || '';
     };
 
-    const _soundUrlEl = document.getElementById('sound-my-send-custom-url');
-if (_soundUrlEl) _soundUrlEl.value = (settings.mySendCustomSoundUrl || '').trim() || 'https://files.catbox.moe/njxgsz.mp3';
-
     document.querySelectorAll('.time-fmt-opt').forEach(opt => {
         opt.classList.toggle('active', opt.dataset.fmt === (settings.timeFormat || 'HH:mm'));
     });
@@ -1078,28 +1075,40 @@ if (_soundUrlEl) _soundUrlEl.value = (settings.mySendCustomSoundUrl || '').trim(
                 soundVolSlider.addEventListener('change', throttledSaveData);
             }
 
-            // 统一音效 URL 输入框 — 一个 URL 控制所有音效
-const soundUrlInput = document.getElementById('sound-my-send-custom-url');
-if (soundUrlInput) {
-    soundUrlInput.addEventListener('change', () => {
-        const url = soundUrlInput.value.trim();
-        settings.mySendCustomSoundUrl = url;
-        settings.partnerMessageCustomSoundUrl = url;
-        settings.myPokeCustomSoundUrl = url;
-        settings.partnerPokeCustomSoundUrl = url;
-        // 如果有 URL 就用 URL，没有就走 kakaotalk 预设
-        const preset = url ? 'tone_low' : 'kakaotalk';
-        settings.mySendSoundPreset = preset;
-        settings.partnerMessageSoundPreset = preset;
-        settings.myPokeSoundPreset = preset;
-        settings.partnerPokeSoundPreset = preset;
+// ========== 统一音效设置 ==========
+const unifiedPresetSelect = document.getElementById('unified-sound-preset');
+const unifiedUrlInput = document.getElementById('unified-sound-url');
+const testUnifiedSoundBtn = document.getElementById('test-unified-sound');
+
+if (unifiedPresetSelect) {
+    unifiedPresetSelect.value = settings.unifiedSoundPreset || 'kakaotalk';
+}
+if (unifiedUrlInput) {
+    unifiedUrlInput.value = settings.unifiedSoundUrl || '';
+}
+
+if (unifiedPresetSelect) {
+    unifiedPresetSelect.addEventListener('change', () => {
+        settings.unifiedSoundPreset = unifiedPresetSelect.value;
         throttledSaveData();
     });
 }
 
-// 试听按钮
-const btnMySend = document.getElementById('test-sound-my-send-btn');
-if (btnMySend) btnMySend.addEventListener('click', () => playSound('send'));
+if (unifiedUrlInput) {
+    unifiedUrlInput.addEventListener('change', () => {
+        const url = unifiedUrlInput.value.trim();
+        settings.unifiedSoundUrl = url;
+        if (url) {
+            settings.unifiedSoundPreset = 'custom';
+            if (unifiedPresetSelect) unifiedPresetSelect.value = 'custom';
+        }
+        throttledSaveData();
+    });
+}
+
+if (testUnifiedSoundBtn) {
+    testUnifiedSoundBtn.addEventListener('click', () => playSound('send'));
+}
 
             document.querySelectorAll('.time-fmt-opt').forEach(opt => {
                 opt.classList.toggle('active', opt.dataset.fmt === (settings.timeFormat || 'HH:mm'));
