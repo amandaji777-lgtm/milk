@@ -272,12 +272,10 @@ function deduplicateContentArray(arr, baseSystemArray = []) {
 
 async function applyCustomFont(url) {
     if (!url || !url.trim()) {
-        const systemFont = '"PingFang SC", system-ui, -apple-system, sans-serif';
-        document.documentElement.style.setProperty('--font-family', systemFont);
-        document.documentElement.style.setProperty('--message-font-family', systemFont);
-        if (typeof settings !== 'undefined') settings.messageFontFamily = systemFont;
-        return;
-    }
+    document.documentElement.style.setProperty('--font-family', "'Noto Serif SC', serif");
+    document.documentElement.style.setProperty('--message-font-family', "'Noto Serif SC', serif");
+    return;
+}
     const fontName = 'UserCustomFont';
     try {
         const font = new FontFace(fontName, `url(${url})`);
