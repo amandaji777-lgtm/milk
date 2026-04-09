@@ -154,7 +154,6 @@ function deduplicateContentArray(arr, baseSystemArray = []) {
                     if (category === 'partner_message') return settings.partnerMessageSoundPreset || 'kakaotalk';
                     if (category === 'my_poke') return settings.myPokeSoundPreset || 'kakaotalk';
                     if (category === 'partner_poke') return settings.partnerPokeSoundPreset || 'kakaotalk';
-                    return 'tone_low';
                 })();
 
                 if (presetId === 'mute') return;
@@ -507,18 +506,4 @@ async function importAllData(file) {
 
         try {
             const importedJson = typeof data === 'string' ? data : JSON.stringify(data);
-            setCloudSyncMeta({
-                updated_at: new Date().toISOString(),
-                size_bytes: new Blob([importedJson]).size,
-                hash: await calcTextSha256(importedJson),
-                source: 'import-json'
-            });
-        } catch (metaErr) {}
-        showNotification('恢复完成，即将刷新页面…', 'success', 2000);
-        setTimeout(() => location.reload(), 2200);
-    } catch (err) {
-        console.error('全量导入失败:', err);
-        const msg = err && err.message ? err.message : '未知错误';
-        showNotification('导入失败：' + msg, 'error', 5000);
-    }
-}
+           
