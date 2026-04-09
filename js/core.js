@@ -332,6 +332,9 @@ const loadData = async () => {
         if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas;
 
         if (savedSettings) Object.assign(settings, savedSettings);
+            if (!settings.messageFontFamily || settings.messageFontFamily.includes('system-ui')) {
+    settings.messageFontFamily = "'Noto Serif SC', serif";
+}
 
         if (settings.showPartnerNameInChat !== undefined) {
             showPartnerNameInChat = settings.showPartnerNameInChat;
