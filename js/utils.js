@@ -114,129 +114,70 @@ function showNotification(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+// ========== 统一音效播放函数 ==========
+// 所有音效场景（发送消息、接收消息、拍一拍）都使用同一个URL
+// URL优先级：自定义URL > kakaotalk默认URL
+const KAKAO_TALK_URL = 'https://files.catbox.moe/njxgsz.mp3';
+
 const playSound = (type) => {
     if (typeof settings === 'undefined' || !settings.soundEnabled) return;
     try {
-        const category = (() => {
-            if (type === 'my_send') return 'my_send';
-            if (type === 'partner_message') return 'partner_message';
-            if (type === 'my_poke') return 'my_poke';
-            if (type === 'partner_poke') return 'partner_poke';
-            if (type === 'send') return 'my_send';
-            if (type === 'message') return 'partner_message';
-            if (type === 'poke') return 'my_poke';
-            return null;
-        })();
-
-        const customUrlByCategory = (() => {
-            if (!category) return '';
-            if (category === 'my_send') return settings.mySendCustomSoundUrl || '';
-            if (category === 'partner_message') return settings.partnerMessageCustomSoundUrl || '';
-            if (category === 'my_poke') return settings.myPokeCustomSoundUrl || '';
-            if (category === 'partner_poke') return settings.partnerPokeCustomSoundUrl || '';
-            return '';
-        })();
-
-        const legacyCustomUrl = (settings.customSoundUrl || '').trim();
-        const resolvedCustomUrlBase = (customUrlByCategory && customUrlByCategory.trim())
-            ? customUrlByCategory.trim()
-            : legacyCustomUrl;
-
-        const KAKAO_TALK_URL = 'https://files.catbox.moe/njxgsz.mp3';
-
-        const presetId = (() => {
-            if (!category) return '';
-            if (category === 'my_send') return settings.mySendSoundPreset || 'kakaotalk';
-            if (category === 'partner_message') return settings.partnerMessageSoundPreset || 'kakaotalk';
-            if (category === 'my_poke') return settings.myPokeSoundPreset || 'kakaotalk';
-            if (category === 'partner_poke') return settings.partnerPokeSoundPreset || 'kakaotalk';
-        })();
-
-        if (presetId === 'mute') return;
-
-        let resolvedCustomUrl = (presetId === 'kakaotalk') ? KAKAO_TALK_URL : resolvedCustomUrlBase;
-
-        if (resolvedCustomUrl) {
-            const audio = new Audio(resolvedCustomUrl);
+        // 获取自定义URL（所有场景共用同一个）
+        let customUrl = (settings.unifiedSoundUrl || '').trim();
+        let presetId = settings.unifiedSoundPreset || 'kakaotalk';
+        
+        // 确定最终使用的URL
+        let soundUrl = null;
+        if (presetId === 'kakaotalk') {
+            soundUrl = KAKAO_TALK_URL;
+        } else if (customUrl) {
+            soundUrl = customUrl;
+        }
+        
+        if (soundUrl) {
+            const audio = new Audio(soundUrl);
             audio.volume = Math.min(1, Math.max(0, settings.soundVolume || 0.15));
             audio.play().catch(() => {});
             return;
         }
-
-        const CATEGORY_BASE = {
-            my_send: { osc1Type: 'triangle', osc2Type: 'sine', freq: 520, dur: 0.18, up: 1.06, down: 0.72 },
-            partner_message: { osc1Type: 'triangle', osc2Type: 'sine', freq: 460, dur: 0.2, up: 1.04, down: 0.74 },
-            my_poke: { osc1Type: 'sawtooth', osc2Type: 'triangle', freq: 400, dur: 0.16, up: 1.08, down: 0.76 },
-            partner_poke: { osc1Type: 'sawtooth', osc2Type: 'triangle', freq: 380, dur: 0.16, up: 1.08, down: 0.76 }
-        };
-
-        const PRESET_EFFECTS = {
-            tone_default: { osc1Type: 'triangle', osc2Type: 'sine', fMul: 0.92, durMul: 1.08, upMul: 1.0, downMul: 0.95 },
-            tone_soft: { osc1Type: 'sine', osc2Type: 'triangle', fMul: 0.88, durMul: 1.15, upMul: 0.98, downMul: 0.92 },
-            tone_low: { osc1Type: 'sawtooth', osc2Type: 'triangle', fMul: 0.78, durMul: 1.2, upMul: 0.96, downMul: 0.88 },
-            tone_warm: { osc1Type: 'triangle', osc2Type: 'triangle', fMul: 0.84, durMul: 1.1, upMul: 0.98, downMul: 0.9 },
-            tone_dark: { osc1Type: 'square', osc2Type: 'triangle', fMul: 0.72, durMul: 1.25, upMul: 0.95, downMul: 0.85 },
-            tone_haze: { osc1Type: 'sine', osc2Type: 'square', fMul: 0.8, durMul: 1.18, upMul: 0.97, downMul: 0.9 }
-        };
-
-        const cfg = (() => {
-            if (category && CATEGORY_BASE[category]) {
-                const base = CATEGORY_BASE[category];
-                const fx = PRESET_EFFECTS[presetId] || PRESET_EFFECTS.tone_default;
-                const osc1Type = (typeof fx.osc1Type === 'string') ? fx.osc1Type : base.osc1Type;
-                const osc2Type = (typeof fx.osc2Type === 'string') ? fx.osc2Type : base.osc2Type;
-                const freq = base.freq * (fx.fMul || 1);
-                const dur = base.dur * (fx.durMul || 1);
-                const up = base.up * (fx.upMul || 1);
-                const down = base.down * (fx.downMul || 1);
-                return { osc1Type, osc2Type, freq, dur, up, down };
-            }
-
-            if (type === 'favorite') return { osc1Type: 'sine', osc2Type: 'sine', freq: 1200, dur: 0.18, up: 1.06, down: 0.70 };
-            if (type === 'anniversary') return { osc1Type: 'sawtooth', osc2Type: 'triangle', freq: 660, dur: 0.22, up: 1.10, down: 0.62 };
-            if (type === 'mood') return { osc1Type: 'sine', osc2Type: 'square', freq: 440, dur: 0.16, up: 1.12, down: 0.60 };
-            if (type === 'import') return { osc1Type: 'square', osc2Type: 'triangle', freq: 330, dur: 0.16, up: 1.25, down: 0.70 };
-            if (type === 'export') return { osc1Type: 'triangle', osc2Type: 'sine', freq: 520, dur: 0.16, up: 1.15, down: 0.66 };
-            if (type === 'error') return { osc1Type: 'sawtooth', osc2Type: 'square', freq: 180, dur: 0.14, up: 1.03, down: 0.42 };
-            return { osc1Type: 'sine', osc2Type: 'triangle', freq: 600, dur: 0.15, up: 1.05, down: 0.60 };
-        })();
-
+        
+        // 如果没有URL且不是kakaotalk预设，使用内置合成音（降级方案）
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const gainNode = audioContext.createGain();
         const vol = Math.min(0.55, Math.max(0.01, settings.soundVolume || 0.1));
-
+        
         const osc1 = audioContext.createOscillator();
         const osc2 = audioContext.createOscillator();
-
+        
         osc1.connect(gainNode);
         osc2.connect(gainNode);
         gainNode.connect(audioContext.destination);
-
+        
         const now = audioContext.currentTime;
         gainNode.gain.setValueAtTime(vol, now);
-
+        
         const jitter = (Math.random() - 0.5) * 0.02;
-        const f1 = cfg.freq * (1 + jitter);
+        const f1 = 520 * (1 + jitter);
         const f2 = f1 * 2;
-
-        osc1.type = cfg.osc1Type;
-        osc2.type = cfg.osc2Type;
-
+        
+        osc1.type = 'triangle';
+        osc2.type = 'sine';
+        
         osc1.frequency.setValueAtTime(f1, now);
         osc2.frequency.setValueAtTime(f2, now);
-
-        osc1.frequency.exponentialRampToValueAtTime(f1 * cfg.up, now + 0.04);
-        osc2.frequency.exponentialRampToValueAtTime(f2 * (cfg.up - 0.03), now + 0.04);
-
-        osc1.frequency.exponentialRampToValueAtTime(f1 * cfg.down, now + cfg.dur);
-        osc2.frequency.exponentialRampToValueAtTime(f2 * cfg.down, now + cfg.dur);
-
-        const end = now + cfg.dur;
+        
+        osc1.frequency.exponentialRampToValueAtTime(f1 * 1.06, now + 0.04);
+        osc2.frequency.exponentialRampToValueAtTime(f2 * 1.03, now + 0.04);
+        
+        osc1.frequency.exponentialRampToValueAtTime(f1 * 0.72, now + 0.18);
+        osc2.frequency.exponentialRampToValueAtTime(f2 * 0.72, now + 0.18);
+        
+        const end = now + 0.18;
         osc1.start(now);
         osc2.start(now);
-
+        
         gainNode.gain.exponentialRampToValueAtTime(0.0001, end);
-
+        
         osc1.stop(end);
         osc2.stop(end);
     } catch (e) { console.warn("音频播放失败:", e); }
@@ -305,30 +246,6 @@ html body .message.message-image-bubble-none {
     background: transparent !important; border: none !important;
     box-shadow: none !important; padding: 0 !important; border-radius: 0 !important;
 }`;
-
-    try {
-        const alreadyCustomized = (typeof settings !== 'undefined' && settings.customThemeColors) ? settings.customThemeColors : {};
-        const sentMatch = cssCode.match(/\.message-sent\s*\{([^}]*)\}/);
-        const recvMatch = cssCode.match(/\.message-received\s*\{([^}]*)\}/);
-        if (sentMatch && !alreadyCustomized['--message-sent-text']) {
-            const colorLine = sentMatch[1].match(/\bcolor\s*:\s*([^;}\n]+)/);
-            if (colorLine) {
-                const v = colorLine[1].trim().replace(/!important/g,'').trim();
-                if (v && !v.startsWith('var(')) {
-                    document.documentElement.style.setProperty('--message-sent-text', v);
-                }
-            }
-        }
-        if (recvMatch && !alreadyCustomized['--message-received-text']) {
-            const colorLine = recvMatch[1].match(/\bcolor\s*:\s*([^;}\n]+)/);
-            if (colorLine) {
-                const v = colorLine[1].trim().replace(/!important/g,'').trim();
-                if (v && !v.startsWith('var(')) {
-                    document.documentElement.style.setProperty('--message-received-text', v);
-                }
-            }
-        }
-    } catch(e) {}
 }
 
 function applyGlobalThemeCss(cssCode) {
