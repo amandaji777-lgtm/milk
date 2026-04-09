@@ -330,7 +330,6 @@
         var clearChatBtn = mc.querySelector('#clear-chat-only');
         if (clearChatBtn) clearChatBtn.addEventListener('click', function () {
             if (!confirm('确定要清除当前会话的所有消息吗？\n\n所有设置、头像、字卡等数据将保留，仅聊天记录会被删除。\n\n此操作无法恢复！')) return;
-            // 修复：直接赋值 let messages（window.messages 赋值不影响 let 绑定）
             messages = [];
             displayedMessageCount = typeof HISTORY_BATCH_SIZE !== 'undefined' ? HISTORY_BATCH_SIZE : 20;
             try { localStorage.removeItem('BACKUP_V1_critical'); } catch(e) {}
@@ -387,61 +386,6 @@
             inp.click();
         });
 
-        var supabaseGuideRow = mc.querySelector('#dm-supabase-guide-row');
-        var supabaseGuideBtn = mc.querySelector('#dm-supabase-guide-btn');
-        var supabaseCheckBtn = mc.querySelector('#dm-supabase-check-btn');
-        var supabaseSyncBtn = mc.querySelector('#dm-supabase-sync-btn');
-        var cloudAutoSyncToggle = mc.querySelector('#dm-cloud-auto-sync-toggle');
-        var cloudAutoSyncInterval = mc.querySelector('#dm-cloud-auto-sync-interval');
-
-        if (supabaseGuideRow) supabaseGuideRow.addEventListener('click', function () {
-            if (typeof openSupabaseGuide === 'function') openSupabaseGuide(false);
-        });
-        if (supabaseGuideBtn) supabaseGuideBtn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            if (typeof openSupabaseGuide === 'function') openSupabaseGuide(true);
-        });
-        if (supabaseCheckBtn) supabaseCheckBtn.addEventListener('click', function () {
-            if (typeof checkSupabaseCloud === 'function') checkSupabaseCloud();
-        });
-        if (supabaseSyncBtn) supabaseSyncBtn.addEventListener('click', function () {
-            if (typeof syncSupabaseCloud === 'function') syncSupabaseCloud();
-        });
-        if (cloudAutoSyncToggle && typeof window.syncCloudAutoSyncSettingsUI === 'function') {
-            cloudAutoSyncToggle.addEventListener('change', function () {
-                if (typeof settings === 'undefined') return;
-                settings.cloudAutoSyncEnabled = !!cloudAutoSyncToggle.checked;
-                if (typeof window.applyCloudAutoSyncSettings === 'function') {
-                    window.applyCloudAutoSyncSettings('toggle');
-                }
-            });
-        }
-        if (cloudAutoSyncInterval && typeof window.syncCloudAutoSyncSettingsUI === 'function') {
-            cloudAutoSyncInterval.addEventListener('input', function () {
-                var val = parseInt(cloudAutoSyncInterval.value, 10);
-                if (!Number.isFinite(val)) return;
-                if (val < 1) val = 1;
-                if (val > 360) val = 360;
-                cloudAutoSyncInterval.value = String(val);
-                if (typeof settings === 'undefined') return;
-                settings.cloudAutoSyncInterval = val;
-                if (typeof window.syncCloudAutoSyncSettingsUI === 'function') {
-                    window.syncCloudAutoSyncSettingsUI();
-                }
-            });
-            cloudAutoSyncInterval.addEventListener('change', function () {
-                var val = parseInt(cloudAutoSyncInterval.value, 10);
-                if (!Number.isFinite(val)) val = 10;
-                val = Math.min(360, Math.max(1, val));
-                cloudAutoSyncInterval.value = String(val);
-                if (typeof settings === 'undefined') return;
-                settings.cloudAutoSyncInterval = val;
-                if (typeof window.applyCloudAutoSyncSettings === 'function') {
-                    window.applyCloudAutoSyncSettings('interval-change');
-                }
-            });
-        }
-
         var creditsBtn = mc.querySelector('#open-credits-btn');
         if (creditsBtn) creditsBtn.addEventListener('click', function () {
             var dataModal = document.getElementById('data-modal');
@@ -473,8 +417,6 @@
         setTimeout(function () {
             updateStats();
             syncToggles();
-            if (typeof window.syncCloudAutoSyncSettingsUI === 'function') window.syncCloudAutoSyncSettingsUI();
-            if (typeof refreshCloudSyncInfo === 'function') refreshCloudSyncInfo();
         }, 60);
     }
 
