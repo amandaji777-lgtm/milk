@@ -187,7 +187,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             overflow: hidden;
             transition: opacity 0.9s ease;
         }
@@ -707,7 +707,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 10px;
-        font-family: 'Inter', 'Noto Serif SC', 'Cormorant Garamond', serif, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Inter', '"PingFang SC", system-ui, -apple-system, sans-serif', 'Cormorant Garamond', serif, -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: 350;
         letter-spacing: 3px;
         font-style: normal;
@@ -3442,7 +3442,7 @@
         }
 
         .welcome-title-glitch {
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             font-size: 40px; font-weight: 700;
             letter-spacing: 10px;
             color: #ffffff;
@@ -4113,7 +4113,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             border: 8px solid rgba(255, 255, 255, 0.2);
             box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
@@ -4172,7 +4172,7 @@
         }
 
         .coin-result-text {
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             font-size: 15px;
             color: #fff;
             font-weight: 300;
