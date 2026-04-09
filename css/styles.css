@@ -30,7 +30,7 @@
             --radius: 18px;
             --radius-sm: 14px;
             --radius-xs: 10px;
-            --font-family: 'Noto Serif SC', serif;
+            --font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             --font-size: 16px;
             --favorite-color: #ffc107;
@@ -40,7 +40,7 @@
             --primary-bg-rgb: 249, 249, 249;
             --secondary-bg-rgb: 255, 255, 255;
             --bubble-style: 'standard';
-            --message-font-family: 'Noto Serif SC', serif;
+            --message-font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             --message-font-weight: 400;
             --message-line-height: 1.5;
             --in-chat-avatar-size: 36px;
@@ -382,7 +382,7 @@
             border-radius: 10px;
             padding: 12px 16px;
             font-size: 14px;
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             color: rgba(var(--accent-color-rgb,197,164,126), 0.85);
             text-align: center;
             margin-bottom: 14px;
@@ -399,7 +399,7 @@
             padding: 13px 16px;
             font-size: 14px;
             color: rgba(255,255,255,0.85);
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             outline: none;
             transition: border-color 0.3s, box-shadow 0.3s;
             text-align: center;
@@ -449,7 +449,7 @@
             padding: 10px 22px;
             border-radius: 50px;
             cursor: pointer;
-            font-family: 'Noto Serif SC', serif;
+            font-family: '"PingFang SC", system-ui, -apple-system, sans-serif', serif;
             font-size: 13px;
             font-weight: 400;
             transition: all 0.25s ease;
