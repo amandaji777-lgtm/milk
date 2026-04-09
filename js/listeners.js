@@ -1325,24 +1325,6 @@ if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
                     handleCoinToss();
                 });
             }
-            const musicToggle = document.getElementById('music-player-toggle');
-            musicToggle.addEventListener('click', () => {
-                settings.musicPlayerEnabled = !settings.musicPlayerEnabled;
-                throttledSaveData();
-
-                const player = document.getElementById('player');
-                if (settings.musicPlayerEnabled) {
-                    player.classList.add('visible');
-                    showNotification('音乐播放器已开启', 'success');
-                } else {
-                    player.classList.remove('visible');
-                    document.getElementById('playlist').classList.remove('active');
-                    const audio = document.getElementById('audio');
-                    if (audio) audio.pause();
-                    showNotification('音乐播放器已关闭', 'info');
-                }
-                hideModal(DOMElements.advancedModal.modal);
-            });
         }
     const annToggleBtn = document.getElementById('ann-toggle-btn');
     const annFormWrapper = document.getElementById('ann-form-wrapper');
