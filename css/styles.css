@@ -50,7 +50,58 @@
             --placeholder-opacity: 0.65;
             --surface-border: rgba(var(--accent-color-rgb,197,164,126), 0.18);
         }
-
+        /* 快捷回复列表项样式 */
+        .qr-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            padding: 8px 12px;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+        }
+        .qr-list-item:hover {
+            border-color: var(--accent-color);
+        }
+        .qr-text-edit {
+            flex: 1;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            cursor: pointer;
+        }
+        .qr-text-edit:hover {
+            background: rgba(var(--accent-color-rgb), 0.08);
+        }
+        .qr-text-edit:focus {
+            outline: none;
+            background: var(--primary-bg);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.3);
+        }
+        .qr-delete-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            opacity: 0.5;
+        }
+        .qr-delete-btn:hover {
+            opacity: 1;
+            color: #ff5050;
+            background: rgba(255, 80, 80, 0.1);
+        }
+        .quick-reply-btn {
+            transition: all 0.2s;
+        }
         :root[data-color-theme="gold"] {
             --accent-color: #c5a47e;
             --accent-color-dark: #d4af37;
