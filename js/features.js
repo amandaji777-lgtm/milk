@@ -1832,7 +1832,7 @@ function renderFavoritesList() {
         if (typeof showNotification === 'function') showNotification('已添加「' + text + '」', 'success');
     }
 
-    // 移动端优化的弹窗打开函数
+   // 移动端优化的弹窗打开函数
     function openQuickReplyModal() {
         // 先关闭所有其他模态框
         var allModals = document.querySelectorAll('.modal');
@@ -1847,35 +1847,71 @@ function renderFavoritesList() {
         var modal = document.getElementById('quick-reply-modal');
         if (!modal) return;
         
-        // 强制设置遮罩层样式（覆盖全屏）
-        modal.style.display = 'flex';
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100%';
-        modal.style.height = '100%';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
-        modal.style.zIndex = '99999';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.backdropFilter = 'blur(8px)';
+        // 判断是否为移动端
+        var isMobile = window.innerWidth <= 768;
         
-        // 确保内容在遮罩之上且可滚动
-        var content = modal.querySelector('.modal-content');
-        if (content) {
-            content.style.position = 'relative';
-            content.style.zIndex = '100000';
-            content.style.backgroundColor = 'var(--secondary-bg)';
-            content.style.maxHeight = '85vh';
-            content.style.overflowY = 'auto';
-            content.style.webkitOverflowScrolling = 'touch';
-            content.style.borderRadius = '24px';
+        if (isMobile) {
+            // 移动端：底部弹出样式
+            modal.style.display = 'flex';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.6)';
+            modal.style.zIndex = '99999';
+            modal.style.alignItems = 'flex-end';
+            modal.style.justifyContent = 'flex-end';
+            modal.style.backdropFilter = 'blur(4px)';
+            
+            var content = modal.querySelector('.modal-content');
+            if (content) {
+                content.style.position = 'relative';
+                content.style.zIndex = '100000';
+                content.style.backgroundColor = 'var(--secondary-bg)';
+                content.style.maxHeight = '85vh';
+                content.style.overflowY = 'auto';
+                content.style.webkitOverflowScrolling = 'touch';
+                content.style.borderRadius = '20px 20px 0 0';
+                content.style.width = '100%';
+                content.style.margin = '0';
+                content.style.padding = '16px 16px 0';
+            }
+        } else {
+            // PC端：居中弹窗
+            modal.style.display = 'flex';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+            modal.style.zIndex = '99999';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.backdropFilter = 'blur(8px)';
+            
+            var content = modal.querySelector('.modal-content');
+            if (content) {
+                content.style.position = 'relative';
+                content.style.zIndex = '100000';
+                content.style.backgroundColor = 'var(--secondary-bg)';
+                content.style.maxHeight = '85vh';
+                content.style.overflowY = 'auto';
+                content.style.webkitOverflowScrolling = 'touch';
+                content.style.borderRadius = '24px';
+                content.style.width = '90%';
+                content.style.maxWidth = '400px';
+                content.style.margin = '0 auto';
+                content.style.padding = '24px 24px 0';
+            }
         }
         
         // 阻止背景滚动（移动端）
         document.body.style.overflow = 'hidden';
         
-        // 移动端：防止触摸穿透（只阻止点击背景，不阻止内容滚动）
+        // 移动端：防止触摸穿透
+        var content = modal.querySelector('.modal-content');
         var touchHandler = function(e) {
             var target = e.target;
             var isInsideContent = content && content.contains(target);
@@ -1884,15 +1920,20 @@ function renderFavoritesList() {
             }
         };
         modal.addEventListener('touchmove', touchHandler, { passive: false });
-        // 保存以便后续移除
         modal._touchHandler = touchHandler;
         
         // 使用全局的 showModal 或直接控制
         if (typeof showModal === 'function') {
             showModal(modal);
         }
+        
+        // 确保底部按钮可见（滚动到底部）
+        setTimeout(function() {
+            if (content) {
+                content.scrollTop = content.scrollHeight;
+            }
+        }, 100);
     }
-    
     function closeQuickReplyModal() {
         var modal = document.getElementById('quick-reply-modal');
         if (modal) {
@@ -1909,71 +1950,3 @@ function renderFavoritesList() {
         }
         document.body.style.overflow = '';
     }
-
-    function initQuickReplies() {
-        if (!localStorage.getItem(QUICK_REPLY_STORAGE_KEY)) {
-            saveQuickReplies(DEFAULT_QUICK_REPLIES.slice());
-        }
-        renderQuickReplyBar();
-        
-        var editBtn = document.getElementById('edit-quick-replies-btn');
-        if (editBtn) {
-            // 移除旧事件，避免重复绑定
-            var newBtn = editBtn.cloneNode(true);
-            editBtn.parentNode.replaceChild(newBtn, editBtn);
-            newBtn.onclick = openQuickReplyModal;
-        }
-        
-        var addBtn = document.getElementById('add-quick-reply-btn');
-        if (addBtn) {
-            var newAddBtn = addBtn.cloneNode(true);
-            addBtn.parentNode.replaceChild(newAddBtn, addBtn);
-            newAddBtn.onclick = addQuickReply;
-        }
-        
-        var resetBtn = document.getElementById('reset-default-replies');
-        if (resetBtn) {
-            var newResetBtn = resetBtn.cloneNode(true);
-            resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
-            newResetBtn.onclick = resetQuickReplies;
-        }
-        
-        var closeBtn = document.getElementById('close-quick-reply-modal');
-        if (closeBtn) {
-            var newCloseBtn = closeBtn.cloneNode(true);
-            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-            newCloseBtn.onclick = closeQuickReplyModal;
-        }
-        
-        var newInput = document.getElementById('new-reply-text');
-        if (newInput) {
-            newInput.onkeypress = function(e) { 
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addQuickReply();
-                }
-            };
-        }
-        
-        // 点击弹窗外关闭
-        var modal = document.getElementById('quick-reply-modal');
-        if (modal) {
-            // 移除旧的监听器避免重复
-            var oldClick = modal._bgClickHandler;
-            if (oldClick) modal.removeEventListener('click', oldClick);
-            var bgClickHandler = function(e) {
-                if (e.target === modal) {
-                    closeQuickReplyModal();
-                }
-            };
-            modal.addEventListener('click', bgClickHandler);
-            modal._bgClickHandler = bgClickHandler;
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initQuickReplies);
-    } else {
-        initQuickReplies();
-    }
-})();
