@@ -102,6 +102,50 @@
         .quick-reply-btn {
             transition: all 0.2s;
         }
+/* 移动端快捷回复弹窗优化 */
+@media (max-width: 768px) {
+    #quick-reply-modal .modal-content {
+        width: 92%;
+        max-width: 92%;
+        max-height: 85vh;
+        padding: 18px 18px 0;
+        border-radius: 20px;
+    }
+    
+    #quick-reply-modal .modal-content .modal-title {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+    
+    #quick-reply-list {
+        max-height: 55vh !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .qr-list-item {
+        padding: 6px 10px !important;
+    }
+    
+    .qr-text-edit {
+        font-size: 15px !important;
+        padding: 8px 6px !important;
+    }
+    
+    .qr-delete-btn {
+        padding: 8px 12px !important;
+        font-size: 16px !important;
+    }
+    
+    #new-reply-text {
+        font-size: 15px !important;
+        padding: 10px 12px !important;
+    }
+    
+    .modal-buttons button {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+    }
+}
         :root[data-color-theme="gold"] {
             --accent-color: #c5a47e;
             --accent-color-dark: #d4af37;
