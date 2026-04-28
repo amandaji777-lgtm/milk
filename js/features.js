@@ -1963,3 +1963,68 @@ function renderFavoritesList() {
         }
         document.body.style.overflow = '';
     }
+
+    function initQuickReplies() {
+        if (!localStorage.getItem(QUICK_REPLY_STORAGE_KEY)) {
+            saveQuickReplies(DEFAULT_QUICK_REPLIES.slice());
+        }
+        renderQuickReplyBar();
+        
+        var editBtn = document.getElementById('edit-quick-replies-btn');
+        if (editBtn) {
+            var newBtn = editBtn.cloneNode(true);
+            editBtn.parentNode.replaceChild(newBtn, editBtn);
+            newBtn.onclick = openQuickReplyModal;
+        }
+        
+        var addBtn = document.getElementById('add-quick-reply-btn');
+        if (addBtn) {
+            var newAddBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+            newAddBtn.onclick = addQuickReply;
+        }
+        
+        var resetBtn = document.getElementById('reset-default-replies');
+        if (resetBtn) {
+            var newResetBtn = resetBtn.cloneNode(true);
+            resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+            newResetBtn.onclick = resetQuickReplies;
+        }
+        
+        var closeBtn = document.getElementById('close-quick-reply-modal');
+        if (closeBtn) {
+            var newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.onclick = closeQuickReplyModal;
+        }
+        
+        var newInput = document.getElementById('new-reply-text');
+        if (newInput) {
+            newInput.onkeypress = function(e) { 
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addQuickReply();
+                }
+            };
+        }
+        
+        var modal = document.getElementById('quick-reply-modal');
+        if (modal) {
+            var oldClick = modal._bgClickHandler;
+            if (oldClick) modal.removeEventListener('click', oldClick);
+            var bgClickHandler = function(e) {
+                if (e.target === modal) {
+                    closeQuickReplyModal();
+                }
+            };
+            modal.addEventListener('click', bgClickHandler);
+            modal._bgClickHandler = bgClickHandler;
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initQuickReplies);
+    } else {
+        initQuickReplies();
+    }
+})();
