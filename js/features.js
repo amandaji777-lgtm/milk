@@ -1662,3 +1662,207 @@ function renderFavoritesList() {
         </div>
     `).join('');
 }
+// ==================== 自定义快捷回复功能 ====================
+(function() {
+    var QUICK_REPLY_STORAGE_KEY = 'quick_replies';
+    var DEFAULT_QUICK_REPLIES = ['是', '否', '对', '不对', '好的', '嗯嗯'];
+
+    function getQuickReplies() {
+        try {
+            var stored = localStorage.getItem(QUICK_REPLY_STORAGE_KEY);
+            if (stored) {
+                var parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch (e) {}
+        return DEFAULT_QUICK_REPLIES.slice();
+    }
+
+    function saveQuickReplies(replies) {
+        localStorage.setItem(QUICK_REPLY_STORAGE_KEY, JSON.stringify(replies));
+        renderQuickReplyBar();
+    }
+
+    window.sendQuickReply = function(text) {
+        if (!text || !text.trim()) return;
+        var inputEl = document.getElementById('message-input');
+        if (inputEl) {
+            inputEl.value = text;
+            inputEl.focus();
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    function renderQuickReplyBar() {
+        var bar = document.getElementById('quick-reply-bar');
+        if (!bar) return;
+        var replies = getQuickReplies();
+        var editBtn = document.getElementById('edit-quick-replies-btn');
+        var btns = bar.querySelectorAll('.quick-reply-btn');
+        btns.forEach(function(btn) { btn.remove(); });
+        var maxDisplay = 8;
+        for (var i = 0; i < Math.min(replies.length, maxDisplay); i++) {
+            var reply = replies[i];
+            var btn = document.createElement('button');
+            btn.className = 'quick-reply-btn';
+            btn.textContent = reply;
+            btn.style.cssText = 'padding:4px 12px;border:1px solid var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-primary);font-size:12px;cursor:pointer;font-family:var(--font-family);transition:all 0.2s;';
+            btn.onclick = (function(r) { return function() { window.sendQuickReply(r); }; })(reply);
+            btn.onmouseenter = function() { btn.style.transform = 'scale(1.02)'; btn.style.borderColor = 'var(--accent-color)'; };
+            btn.onmouseleave = function() { btn.style.transform = 'scale(1)'; btn.style.borderColor = 'var(--border-color)'; };
+            bar.insertBefore(btn, editBtn);
+        }
+        var moreCount = replies.length - maxDisplay;
+        var moreHint = document.getElementById('quick-reply-more-hint');
+        if (moreCount > 0) {
+            if (!moreHint) {
+                moreHint = document.createElement('span');
+                moreHint.id = 'quick-reply-more-hint';
+                moreHint.style.cssText = 'font-size:10px;color:var(--text-secondary);opacity:0.6;margin-left:4px;';
+                bar.insertBefore(moreHint, editBtn.nextSibling);
+            }
+            moreHint.textContent = '+' + moreCount;
+        } else if (moreHint && moreHint.remove) {
+            moreHint.remove();
+        }
+    }
+
+    function renderQuickReplyEditList() {
+        var container = document.getElementById('quick-reply-list');
+        if (!container) return;
+        var replies = getQuickReplies();
+        if (replies.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:13px;"><i class="fas fa-inbox"></i><br>暂无快捷回复<br>点击上方添加</div>';
+            return;
+        }
+        container.innerHTML = '';
+        for (var idx = 0; idx < replies.length; idx++) {
+            (function(index) {
+                var reply = replies[index];
+                var item = document.createElement('div');
+                item.className = 'qr-list-item';
+                item.setAttribute('draggable', 'true');
+                var dragIcon = document.createElement('span');
+                dragIcon.innerHTML = '<i class="fas fa-grip-vertical" style="opacity:0.3;margin-right:8px;cursor:grab;"></i>';
+                dragIcon.style.cursor = 'grab';
+                var textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = reply;
+                textInput.className = 'qr-text-edit';
+                textInput.maxLength = 20;
+                textInput.onblur = function() {
+                    var newText = this.value.trim();
+                    if (newText && newText !== reply) {
+                        var newReplies = getQuickReplies();
+                        newReplies[index] = newText;
+                        saveQuickReplies(newReplies);
+                        renderQuickReplyEditList();
+                        if (typeof showNotification === 'function') showNotification('已更新', 'success');
+                    } else if (!newText) {
+                        this.value = reply;
+                    }
+                };
+                textInput.onkeypress = function(e) { if (e.key === 'Enter') this.blur(); };
+                var delBtn = document.createElement('button');
+                delBtn.className = 'qr-delete-btn';
+                delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                delBtn.onclick = function() {
+                    if (confirm('确定删除「' + reply + '」吗？')) {
+                        var newReplies = getQuickReplies();
+                        newReplies.splice(index, 1);
+                        saveQuickReplies(newReplies);
+                        renderQuickReplyEditList();
+                        if (typeof showNotification === 'function') showNotification('已删除', 'info');
+                    }
+                };
+                item.appendChild(dragIcon);
+                item.appendChild(textInput);
+                item.appendChild(delBtn);
+                container.appendChild(item);
+            })(idx);
+        }
+        // 拖拽排序
+        var dragSrcIndex = null;
+        var items = document.querySelectorAll('#quick-reply-list .qr-list-item');
+        for (var i = 0; i < items.length; i++) {
+            (function(item, idx) {
+                item.ondragstart = function(e) { dragSrcIndex = idx; e.dataTransfer.effectAllowed = 'move'; item.style.opacity = '0.5'; };
+                item.ondragend = function(e) { item.style.opacity = ''; };
+                item.ondragover = function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
+                item.ondrop = function(e) {
+                    e.preventDefault();
+                    if (dragSrcIndex !== null && dragSrcIndex !== idx) {
+                        var repliesList = getQuickReplies();
+                        var moved = repliesList.splice(dragSrcIndex, 1)[0];
+                        repliesList.splice(idx, 0, moved);
+                        saveQuickReplies(repliesList);
+                        renderQuickReplyEditList();
+                        if (typeof showNotification === 'function') showNotification('顺序已调整', 'success');
+                    }
+                    dragSrcIndex = null;
+                };
+            })(items[i], i);
+        }
+    }
+
+    function resetQuickReplies() {
+        if (confirm('恢复默认将覆盖当前所有自定义快捷回复，确定吗？')) {
+            saveQuickReplies(DEFAULT_QUICK_REPLIES.slice());
+            renderQuickReplyEditList();
+            if (typeof showNotification === 'function') showNotification('已恢复默认快捷回复', 'success');
+        }
+    }
+
+    function addQuickReply() {
+        var input = document.getElementById('new-reply-text');
+        var text = input.value.trim();
+        if (!text) { if (typeof showNotification === 'function') showNotification('请输入内容', 'warning'); return; }
+        if (text.length > 20) { if (typeof showNotification === 'function') showNotification('内容不能超过20个字符', 'warning'); return; }
+        var current = getQuickReplies();
+        for (var i = 0; i < current.length; i++) {
+            if (current[i] === text) {
+                if (typeof showNotification === 'function') showNotification('该快捷回复已存在', 'warning');
+                return;
+            }
+        }
+        current.push(text);
+        saveQuickReplies(current);
+        input.value = '';
+        renderQuickReplyEditList();
+        if (typeof showNotification === 'function') showNotification('已添加「' + text + '」', 'success');
+    }
+
+    function openQuickReplyModal() {
+        renderQuickReplyEditList();
+        var modal = document.getElementById('quick-reply-modal');
+        if (modal && typeof showModal === 'function') showModal(modal);
+        else if (modal) modal.style.display = 'flex';
+    }
+
+    function initQuickReplies() {
+        if (!localStorage.getItem(QUICK_REPLY_STORAGE_KEY)) {
+            saveQuickReplies(DEFAULT_QUICK_REPLIES.slice());
+        }
+        renderQuickReplyBar();
+        var editBtn = document.getElementById('edit-quick-replies-btn');
+        if (editBtn) editBtn.onclick = openQuickReplyModal;
+        var addBtn = document.getElementById('add-quick-reply-btn');
+        if (addBtn) addBtn.onclick = addQuickReply;
+        var resetBtn = document.getElementById('reset-default-replies');
+        if (resetBtn) resetBtn.onclick = resetQuickReplies;
+        var closeBtn = document.getElementById('close-quick-reply-modal');
+        if (closeBtn) closeBtn.onclick = function() {
+            var modal = document.getElementById('quick-reply-modal');
+            if (modal && typeof hideModal === 'function') hideModal(modal);
+            else if (modal) modal.style.display = 'none';
+        };
+        var newInput = document.getElementById('new-reply-text');
+        if (newInput) newInput.onkeypress = function(e) { if (e.key === 'Enter') addQuickReply(); };
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initQuickReplies);
+    } else {
+        initQuickReplies();
+    }
+})();
