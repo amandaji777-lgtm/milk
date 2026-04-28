@@ -1834,54 +1834,73 @@ function renderFavoritesList() {
 
     // 移动端优化的弹窗打开函数
     function openQuickReplyModal() {
+        // 先关闭所有其他模态框
+        var allModals = document.querySelectorAll('.modal');
+        for (var i = 0; i < allModals.length; i++) {
+            var m = allModals[i];
+            if (m.id !== 'quick-reply-modal' && m.style.display === 'flex') {
+                m.style.display = 'none';
+            }
+        }
+        
         renderQuickReplyEditList();
         var modal = document.getElementById('quick-reply-modal');
         if (!modal) return;
         
-        // 确保弹窗可滚动
+        // 强制设置遮罩层样式（覆盖全屏）
         modal.style.display = 'flex';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+        modal.style.zIndex = '99999';
         modal.style.alignItems = 'center';
         modal.style.justifyContent = 'center';
-        modal.style.overflow = 'auto';
+        modal.style.backdropFilter = 'blur(8px)';
         
-        // 获取内容区域并确保可滚动
+        // 确保内容在遮罩之上且可滚动
         var content = modal.querySelector('.modal-content');
         if (content) {
+            content.style.position = 'relative';
+            content.style.zIndex = '100000';
+            content.style.backgroundColor = 'var(--secondary-bg)';
             content.style.maxHeight = '85vh';
             content.style.overflowY = 'auto';
-            content.style.webkitOverflowScrolling = 'touch'; // 移动端平滑滚动
+            content.style.webkitOverflowScrolling = 'touch';
+            content.style.borderRadius = '24px';
         }
         
         // 阻止背景滚动（移动端）
         document.body.style.overflow = 'hidden';
         
-        // 移动端：防止触摸穿透
-        modal.addEventListener('touchmove', function(e) {
+        // 移动端：防止触摸穿透（只阻止点击背景，不阻止内容滚动）
+        var touchHandler = function(e) {
             var target = e.target;
             var isInsideContent = content && content.contains(target);
-            if (!isInsideContent) {
+            if (!isInsideContent && target === modal) {
                 e.preventDefault();
             }
-        }, { passive: false });
+        };
+        modal.addEventListener('touchmove', touchHandler, { passive: false });
+        // 保存以便后续移除
+        modal._touchHandler = touchHandler;
         
         // 使用全局的 showModal 或直接控制
         if (typeof showModal === 'function') {
             showModal(modal);
         }
-        
-        // 移动端：自动聚焦到添加输入框（可选）
-        setTimeout(function() {
-            var addInput = document.getElementById('new-reply-text');
-            if (addInput && window.innerWidth <= 768) {
-                // 移动端不自动弹键盘，避免遮挡
-                // addInput.focus();
-            }
-        }, 100);
     }
     
     function closeQuickReplyModal() {
         var modal = document.getElementById('quick-reply-modal');
         if (modal) {
+            // 移除触摸事件监听
+            if (modal._touchHandler) {
+                modal.removeEventListener('touchmove', modal._touchHandler);
+                delete modal._touchHandler;
+            }
             if (typeof hideModal === 'function') {
                 hideModal(modal);
             } else {
@@ -1939,11 +1958,16 @@ function renderFavoritesList() {
         // 点击弹窗外关闭
         var modal = document.getElementById('quick-reply-modal');
         if (modal) {
-            modal.addEventListener('click', function(e) {
+            // 移除旧的监听器避免重复
+            var oldClick = modal._bgClickHandler;
+            if (oldClick) modal.removeEventListener('click', oldClick);
+            var bgClickHandler = function(e) {
                 if (e.target === modal) {
                     closeQuickReplyModal();
                 }
-            });
+            };
+            modal.addEventListener('click', bgClickHandler);
+            modal._bgClickHandler = bgClickHandler;
         }
     }
 
