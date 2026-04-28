@@ -1832,11 +1832,63 @@ function renderFavoritesList() {
         if (typeof showNotification === 'function') showNotification('已添加「' + text + '」', 'success');
     }
 
+    // 移动端优化的弹窗打开函数
     function openQuickReplyModal() {
         renderQuickReplyEditList();
         var modal = document.getElementById('quick-reply-modal');
-        if (modal && typeof showModal === 'function') showModal(modal);
-        else if (modal) modal.style.display = 'flex';
+        if (!modal) return;
+        
+        // 确保弹窗可滚动
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.overflow = 'auto';
+        
+        // 获取内容区域并确保可滚动
+        var content = modal.querySelector('.modal-content');
+        if (content) {
+            content.style.maxHeight = '85vh';
+            content.style.overflowY = 'auto';
+            content.style.webkitOverflowScrolling = 'touch'; // 移动端平滑滚动
+        }
+        
+        // 阻止背景滚动（移动端）
+        document.body.style.overflow = 'hidden';
+        
+        // 移动端：防止触摸穿透
+        modal.addEventListener('touchmove', function(e) {
+            var target = e.target;
+            var isInsideContent = content && content.contains(target);
+            if (!isInsideContent) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // 使用全局的 showModal 或直接控制
+        if (typeof showModal === 'function') {
+            showModal(modal);
+        }
+        
+        // 移动端：自动聚焦到添加输入框（可选）
+        setTimeout(function() {
+            var addInput = document.getElementById('new-reply-text');
+            if (addInput && window.innerWidth <= 768) {
+                // 移动端不自动弹键盘，避免遮挡
+                // addInput.focus();
+            }
+        }, 100);
+    }
+    
+    function closeQuickReplyModal() {
+        var modal = document.getElementById('quick-reply-modal');
+        if (modal) {
+            if (typeof hideModal === 'function') {
+                hideModal(modal);
+            } else {
+                modal.style.display = 'none';
+            }
+        }
+        document.body.style.overflow = '';
     }
 
     function initQuickReplies() {
@@ -1844,20 +1896,55 @@ function renderFavoritesList() {
             saveQuickReplies(DEFAULT_QUICK_REPLIES.slice());
         }
         renderQuickReplyBar();
+        
         var editBtn = document.getElementById('edit-quick-replies-btn');
-        if (editBtn) editBtn.onclick = openQuickReplyModal;
+        if (editBtn) {
+            // 移除旧事件，避免重复绑定
+            var newBtn = editBtn.cloneNode(true);
+            editBtn.parentNode.replaceChild(newBtn, editBtn);
+            newBtn.onclick = openQuickReplyModal;
+        }
+        
         var addBtn = document.getElementById('add-quick-reply-btn');
-        if (addBtn) addBtn.onclick = addQuickReply;
+        if (addBtn) {
+            var newAddBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+            newAddBtn.onclick = addQuickReply;
+        }
+        
         var resetBtn = document.getElementById('reset-default-replies');
-        if (resetBtn) resetBtn.onclick = resetQuickReplies;
+        if (resetBtn) {
+            var newResetBtn = resetBtn.cloneNode(true);
+            resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+            newResetBtn.onclick = resetQuickReplies;
+        }
+        
         var closeBtn = document.getElementById('close-quick-reply-modal');
-        if (closeBtn) closeBtn.onclick = function() {
-            var modal = document.getElementById('quick-reply-modal');
-            if (modal && typeof hideModal === 'function') hideModal(modal);
-            else if (modal) modal.style.display = 'none';
-        };
+        if (closeBtn) {
+            var newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.onclick = closeQuickReplyModal;
+        }
+        
         var newInput = document.getElementById('new-reply-text');
-        if (newInput) newInput.onkeypress = function(e) { if (e.key === 'Enter') addQuickReply(); };
+        if (newInput) {
+            newInput.onkeypress = function(e) { 
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addQuickReply();
+                }
+            };
+        }
+        
+        // 点击弹窗外关闭
+        var modal = document.getElementById('quick-reply-modal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeQuickReplyModal();
+                }
+            });
+        }
     }
 
     if (document.readyState === 'loading') {
