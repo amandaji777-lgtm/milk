@@ -146,6 +146,28 @@
         font-size: 13px !important;
     }
 }
+#quick-reply-modal {
+    z-index: 10000 !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+#quick-reply-modal .modal-content {
+    z-index: 10001 !important;
+    position: relative !important;
+    background-color: var(--secondary-bg) !important;
+}
+
+/* 确保弹窗在聊天内容之上 */
+.modal {
+    z-index: 9999 !important;
+}
+
+#quick-reply-modal.show,
+#quick-reply-modal[style*="display: flex"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
         :root[data-color-theme="gold"] {
             --accent-color: #c5a47e;
             --accent-color-dark: #d4af37;
