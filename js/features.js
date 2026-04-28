@@ -1932,8 +1932,21 @@ function renderFavoritesList() {
             if (content) {
                 content.scrollTop = content.scrollHeight;
             }
-        }, 100);
-    }
+        }, 200);
+        
+        // 移动端：键盘收起后重新调整滚动位置
+        var $modal = modal;
+        var $content = content;
+        window.addEventListener('resize', function onResize() {
+            if ($modal && $modal.style.display === 'flex') {
+                if ($content) {
+                    $content.scrollTop = $content.scrollHeight;
+                }
+            }
+            window.removeEventListener('resize', onResize);
+        });
+    }  // ← openQuickReplyModal 函数结束
+
     function closeQuickReplyModal() {
         var modal = document.getElementById('quick-reply-modal');
         if (modal) {
