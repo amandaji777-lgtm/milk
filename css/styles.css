@@ -113,9 +113,9 @@
     #quick-reply-modal .modal-content {
         width: 100% !important;
         max-width: 100% !important;
-        max-height: 85vh !important;
+        max-height: 80vh !important;  /* 从85vh改到80vh，留出更多空间 */
         height: auto !important;
-        padding: 16px 16px 0 !important;
+        padding: 16px 16px 20px !important;  /* 底部增加内边距 */
         border-radius: 20px 20px 0 0 !important;
         margin: 0 !important;
         position: absolute !important;
@@ -125,18 +125,28 @@
         top: auto !important;
         transform: none !important;
         overflow-y: auto !important;
+        /* 确保滚动条正常 */
+        -webkit-overflow-scrolling: touch !important;
     }
     
     #quick-reply-modal .modal-content .modal-title {
         font-size: 16px;
         margin-bottom: 12px;
         padding-right: 20px;
+        position: sticky;
+        top: 0;
+        background: var(--secondary-bg);
+        z-index: 5;
+        padding-top: 4px;
     }
     
+    /* 列表区域设置合理高度 */
     #quick-reply-list {
-        max-height: 45vh !important;
+        max-height: 40vh !important;  /* 减小高度，留出空间给按钮 */
+        min-height: 120px;
         -webkit-overflow-scrolling: touch;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
+        overflow-y: auto;
     }
     
     .qr-list-item {
@@ -158,14 +168,16 @@
         padding: 10px 12px !important;
     }
     
+    /* 按钮区域固定在底部 */
     .modal-buttons {
         position: sticky !important;
         bottom: 0 !important;
         background: var(--secondary-bg) !important;
-        padding: 12px 0 16px !important;
+        padding: 12px 0 20px !important;
         margin-top: 8px !important;
         border-top: 1px solid var(--border-color) !important;
         gap: 8px !important;
+        z-index: 10 !important;
     }
     
     .modal-buttons button {
@@ -175,7 +187,7 @@
     }
     
     /* 添加新回复的输入框区域固定 */
-    #quick-reply-modal .add-reply-section {
+    .add-reply-section {
         position: sticky !important;
         top: 0 !important;
         background: var(--secondary-bg) !important;
