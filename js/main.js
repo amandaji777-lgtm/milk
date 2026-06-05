@@ -17,6 +17,7 @@ const S = {
       { id: 'kaomoji',   name: '颜文字',   builtin: true,  cards: [] },
       { id: 'emoji',     name: 'Emoji',    builtin: true,  cards: [] },
       { id: 'spiritual', name: '灵性分组', builtin: true,  cards: [] },
+      { id: 'status',    name: '状态分组', builtin: true,  cards: [] },
     ]
   },
   statusOptions: { me: [], partner: [], shared: [] },
@@ -130,11 +131,17 @@ function setAvEl(id, src, small) {
   const el = document.getElementById(id); if (!el) return;
   el.innerHTML = src ? `<img src="${src}" alt="">` : `<i class="fas fa-user" style="font-size:${small?'9':'13'}px;"></i>`;
 }
+function randomStatus() {
+  const g = S.wordcards.groups.find(x => x.id === 'status');
+  const active = g ? g.cards.filter(c => !c.disabled) : [];
+  if (!active.length) return '';
+  return active[Math.floor(Math.random() * active.length)].text;
+}
 function updateStatusDisplay() {
-  const me = S.currentStatus.me.join(' | ') || '在线';
-  const pt = S.currentStatus.partner.join(' | ') || '在线';
-  document.getElementById('my-st').textContent = me;
-  document.getElementById('partner-st').textContent = pt;
+  const myS  = randomStatus();
+  const ptS  = randomStatus();
+  document.getElementById('my-st').textContent = myS || '';
+  document.getElementById('partner-st').textContent = ptS || '';
 }
 
 // ══════════════════════ MESSAGES ══════════════════════
@@ -767,7 +774,7 @@ document.getElementById('btn-propose-shared').addEventListener('click', () => {
   document.getElementById('shared-custom').value = '';
   document.querySelectorAll('#shared-tags .tag.sel').forEach(t => t.classList.remove('sel'));
   save(); renderSharedTab();
-  document.getElementById('energy-dot').classList.add('on');
+  // energy dot removed from header
   toast('提议已发出，等待梦角回应');
 });
 
@@ -785,7 +792,6 @@ document.getElementById('btn-proposal-yes').addEventListener('click', () => {
   S.sharedHistory.unshift({ ts: Date.now(), value: p.value, action: '通过', reason: '' });
   S.sharedProposal = null;
   save(); updateStatusDisplay();
-  document.getElementById('energy-dot').classList.remove('on');
   closeOv('ov-proposal-respond');
   renderSharedTab(); toast('共同状态已更新');
 });
@@ -813,7 +819,6 @@ document.getElementById('btn-confirm-deny').addEventListener('click', () => {
   S.sharedProposal = null;
   document.getElementById('deny-custom-reason').value = '';
   save();
-  document.getElementById('energy-dot').classList.remove('on');
   closeOv('ov-proposal-respond');
   renderSharedTab(); toast('梦角否定了提议');
 });
@@ -1160,27 +1165,60 @@ function closeCtx() { document.getElementById('ctx').classList.remove('open'); c
 
 // ═══════════════════════ VIDEO CALL ═══════════════════════
 let callTimer = null, callSec = 0;
+
+function updatePipAvatar() {
+  const src = S.settings.partnerAvatar;
+  const pip = document.getElementById('pip-circle');
+  pip.innerHTML = src ? `<img src="${src}" alt="">` : `<i class="fas fa-user" style="font-size:24px;color:var(--accent);"></i>`;
+}
+
 document.getElementById('pm-video').addEventListener('click', () => {
   closePlusMenu();
-  document.getElementById('call-in-view').style.display = '';
-  document.getElementById('call-act-view').style.display = 'none';
-  document.getElementById('call-ov').classList.add('open');
+  updatePipAvatar();
+  document.getElementById('c-nm-in').textContent = S.settings.partnerName;
+  setAvEl('c-av-in', S.settings.partnerAvatar);
+  document.getElementById('call-inc').classList.add('open');
 });
 document.getElementById('btn-c-dec').addEventListener('click', endCall);
 document.getElementById('btn-c-acc').addEventListener('click', () => {
-  document.getElementById('call-in-view').style.display = 'none';
-  document.getElementById('call-act-view').style.display = '';
+  document.getElementById('call-inc').classList.remove('open');
+  document.getElementById('call-pip').classList.add('open');
   callSec = 0; clearInterval(callTimer);
   callTimer = setInterval(() => {
     callSec++;
     const m = String(Math.floor(callSec/60)).padStart(2,'0'), s = String(callSec%60).padStart(2,'0');
-    document.getElementById('c-timer').textContent = `${m}:${s}`;
+    document.getElementById('pip-timer').textContent = `${m}:${s}`;
   }, 1000);
 });
-document.getElementById('btn-c-end').addEventListener('click', endCall);
-document.getElementById('btn-c-mute').addEventListener('click', function() { this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5'; });
-document.getElementById('btn-c-cam').addEventListener('click', function() { this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5'; });
-function endCall() { clearInterval(callTimer); document.getElementById('call-ov').classList.remove('open'); }
+document.getElementById('btn-pip-end').addEventListener('click', endCall);
+document.getElementById('btn-pip-mute').addEventListener('click', function() {
+  this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5';
+});
+function endCall() {
+  clearInterval(callTimer);
+  document.getElementById('call-inc').classList.remove('open');
+  document.getElementById('call-pip').classList.remove('open');
+}
+
+// Draggable pip
+(function() {
+  const pip = document.getElementById('call-pip');
+  let ox=0, oy=0, sx=0, sy=0;
+  pip.addEventListener('mousedown', e => {
+    if (e.target.closest('button')) return;
+    sx=e.clientX-pip.offsetLeft; sy=e.clientY-pip.offsetTop;
+    const onMove = e => { pip.style.right='auto'; pip.style.bottom='auto'; pip.style.left=(e.clientX-sx)+'px'; pip.style.top=(e.clientY-sy)+'px'; };
+    const onUp = () => { document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
+    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+  });
+  pip.addEventListener('touchstart', e => {
+    if (e.target.closest('button')) return;
+    const t=e.touches[0]; sx=t.clientX-pip.offsetLeft; sy=t.clientY-pip.offsetTop;
+    const onMove = e => { const t=e.touches[0]; pip.style.right='auto'; pip.style.bottom='auto'; pip.style.left=(t.clientX-sx)+'px'; pip.style.top=(t.clientY-sy)+'px'; };
+    const onUp = () => { document.removeEventListener('touchmove',onMove); document.removeEventListener('touchend',onUp); };
+    document.addEventListener('touchmove',onMove,{passive:true}); document.addEventListener('touchend',onUp);
+  },{passive:true});
+})();
 
 // ═══════════════════════ MODAL ROUTING ═══════════════════════
 document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => closeOv(el.dataset.close)));
@@ -1190,7 +1228,6 @@ document.querySelectorAll('.ov').forEach(ov => ov.addEventListener('click', e =>
 
 // Header buttons
 document.getElementById('btn-settings').addEventListener('click', () => openOv('ov-settings'));
-document.getElementById('btn-energy').addEventListener('click', () => { document.getElementById('energy-dot').classList.remove('on'); openEnergyModal(); });
 document.getElementById('btn-plus').addEventListener('click', togglePlusMenu);
 document.getElementById('btn-emoji-tog').addEventListener('click', toggleEmojiPanel);
 document.getElementById('pm-note').addEventListener('click', () => { closePlusMenu(); openNoteModal(); });
@@ -1277,8 +1314,6 @@ async function init() {
   // auto send
   scheduleAutoSend();
 
-  // proposal dot
-  if (S.sharedProposal) document.getElementById('energy-dot').classList.add('on');
 }
 
 init();
