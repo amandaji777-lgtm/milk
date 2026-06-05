@@ -287,6 +287,11 @@ function sendMsg(text, opts = {}) {
   addMessage(m);
   clearReply();
   scheduleReply();
+  if (Math.random() < 0.15) {
+    const g = S.wordcards.groups.find(x => x.id === 'status');
+    const active = g ? g.cards.filter(c => !c.disabled) : [];
+    if (active.length) document.getElementById('my-st').textContent = active[Math.floor(Math.random() * active.length)].text;
+  }
 }
 
 function doSend() {
@@ -348,6 +353,13 @@ function pickCards() {
 function sendPartnerMsg() {
   const text = pickCards(); if (!text) return;
   addMessage({ id: uid(), ts: Date.now(), side: 'recv', type: 'text', text, quoteText: null });
+  if (Math.random() < 0.25) refreshPartnerStatus();
+}
+function refreshPartnerStatus() {
+  const g = S.wordcards.groups.find(x => x.id === 'status');
+  const active = g ? g.cards.filter(c => !c.disabled) : [];
+  if (!active.length) return;
+  document.getElementById('partner-st').textContent = active[Math.floor(Math.random() * active.length)].text;
 }
 
 // ── POKE ──
@@ -900,17 +912,19 @@ function renderGroupList() {
   });
 }
 
-function openGroupEdit(groupId) {
+let groupEditBackTo = 'ov-wordcards';
+function openGroupEdit(groupId, backTo) {
   currentGroupId = groupId;
+  groupEditBackTo = backTo || 'ov-wordcards';
   const g = S.wordcards.groups.find(x => x.id === groupId); if (!g) return;
   document.getElementById('group-edit-title').textContent = g.name;
   document.getElementById('new-card-in').value = '';
   renderCardList();
-  closeOv('ov-wordcards');
+  closeAll();
   openOv('ov-group-edit');
 }
 document.getElementById('back-group').addEventListener('click', () => {
-  closeOv('ov-group-edit'); openOv('ov-wordcards');
+  closeOv('ov-group-edit'); openOv(groupEditBackTo);
 });
 
 function renderCardList() {
@@ -1225,6 +1239,11 @@ document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('cli
 document.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openOv(el.dataset.open)));
 document.querySelectorAll('[data-back]').forEach(el => el.addEventListener('click', () => { closeAll(); openOv(el.dataset.back); }));
 document.querySelectorAll('.ov').forEach(ov => ov.addEventListener('click', e => { if (e.target === ov) closeOv(ov.id); }));
+
+// 在线状态 shortcut → open status group editor directly
+document.getElementById('sc-online-status').addEventListener('click', () => {
+  openGroupEdit('status', 'ov-advanced');
+});
 
 // Header buttons
 document.getElementById('btn-settings').addEventListener('click', () => openOv('ov-settings'));
