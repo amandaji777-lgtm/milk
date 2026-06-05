@@ -1,108 +1,112 @@
-// ===================== STATE =====================
+// ══════════════════════ STATE ══════════════════════
 const S = {
   settings: {
-    myName:'我', partnerName:'梦角',
-    myStatus:'在线', partnerStatus:'在线',
-    myAvatar:null, partnerAvatar:null,
-    theme:'light', accent:'#c5a47e',
-    wallpaper:null, wallOpacity:35,
-    fontSize:15, bubbleCSS:'',
-    replyMin:3, replyMax:7,
-    sound:true, typing:true, quoteEnabled:true,
-    energy:{ me:'', partner:'', rel:'' }
+    myName: '我', partnerName: '梦角',
+    myAvatar: null, partnerAvatar: null,
+    accent: '#c5a47e',
+    wallpaper: null, wallOpacity: 35,
+    fontSize: 16, bubbleCSS: '',
+    sound: true, typing: true, quoteEnabled: true,
+    autoSend: { enabled: false, minMin: 30, maxMin: 60 },
+    replyDelay: { minSec: 3, maxSec: 15 },
   },
-  messages:[],
-  flashcards:[],
-  noteOptions:[],
-  energyOptions:{ me:[], partner:[], rel:[] },
-  stickers:{ my:[], partner:[] },
-  anniversaries:[],
-  letters:[]
+  messages: [],
+  wordcards: {
+    groups: [
+      { id: 'daily',     name: '日常交流', builtin: true,  cards: [] },
+      { id: 'kaomoji',   name: '颜文字',   builtin: true,  cards: [] },
+      { id: 'emoji',     name: 'Emoji',    builtin: true,  cards: [] },
+      { id: 'spiritual', name: '灵性分组', builtin: true,  cards: [] },
+    ]
+  },
+  statusOptions: { me: [], partner: [], shared: [] },
+  currentStatus: { me: [], partner: [], shared: '' },
+  sharedProposal: null,
+  sharedHistory: [],
+  notes: [],
+  envelopes: [],
+  stickers: [],
+  customKaomoji: [],
 };
 
-let replyTarget = null;    // quoted message
-let ctxTarget = null;      // right-clicked message el
-let avTarget = null;       // 'me' | 'partner'
-let editCallback = null;
-let callTimer = null;
-let callSec = 0;
-let noteSender = 'me';
-let letterTab = 'write';
-let emojiTab = 'emoji';
-let pendingLetterCheck = false;
+const STORE_KEY = 'mjchat_v2';
 
-// ===================== STORAGE =====================
-const STORE_KEY = 'mjchat_v1';
+// ══════════════════════ STORAGE ══════════════════════
 async function load() {
   try {
     const d = await localforage.getItem(STORE_KEY);
-    if (d) {
-      if (d.settings)      Object.assign(S.settings, d.settings);
-      if (d.messages)      S.messages = d.messages;
-      if (d.flashcards)    S.flashcards = d.flashcards;
-      if (d.noteOptions)   S.noteOptions = d.noteOptions;
-      if (d.energyOptions) Object.assign(S.energyOptions, d.energyOptions);
-      if (d.stickers)      Object.assign(S.stickers, d.stickers);
-      if (d.anniversaries) S.anniversaries = d.anniversaries;
-      if (d.letters)       S.letters = d.letters;
-    }
-  } catch(e){}
+    if (!d) return;
+    if (d.settings)       Object.assign(S.settings, d.settings);
+    if (d.messages)       S.messages = d.messages;
+    if (d.wordcards)      S.wordcards = d.wordcards;
+    if (d.statusOptions)  Object.assign(S.statusOptions, d.statusOptions);
+    if (d.currentStatus)  Object.assign(S.currentStatus, d.currentStatus);
+    if (d.sharedProposal !== undefined) S.sharedProposal = d.sharedProposal;
+    if (d.sharedHistory)  S.sharedHistory = d.sharedHistory;
+    if (d.notes)          S.notes = d.notes;
+    if (d.envelopes)      S.envelopes = d.envelopes;
+    if (d.stickers)       S.stickers = d.stickers;
+    if (d.customKaomoji)  S.customKaomoji = d.customKaomoji;
+  } catch(e) { console.error(e); }
 }
 function save() {
   localforage.setItem(STORE_KEY, {
-    settings:S.settings, messages:S.messages, flashcards:S.flashcards,
-    noteOptions:S.noteOptions, energyOptions:S.energyOptions,
-    stickers:S.stickers, anniversaries:S.anniversaries, letters:S.letters
+    settings: S.settings,
+    messages: S.messages,
+    wordcards: S.wordcards,
+    statusOptions: S.statusOptions,
+    currentStatus: S.currentStatus,
+    sharedProposal: S.sharedProposal,
+    sharedHistory: S.sharedHistory,
+    notes: S.notes,
+    envelopes: S.envelopes,
+    stickers: S.stickers,
+    customKaomoji: S.customKaomoji,
   });
 }
 
-// ===================== AUDIO =====================
+// ══════════════════════ AUDIO ══════════════════════
 let audioCtx = null;
-function playKakao() {
+function playSound() {
   if (!S.settings.sound) return;
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.connect(g); g.connect(audioCtx.destination);
-    o.type = 'sine'; o.frequency.setValueAtTime(880, audioCtx.currentTime);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, audioCtx.currentTime);
     o.frequency.exponentialRampToValueAtTime(660, audioCtx.currentTime + 0.08);
-    g.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
     o.start(); o.stop(audioCtx.currentTime + 0.18);
-  } catch(e){}
+  } catch(e) {}
 }
 
-// ===================== TOAST =====================
+// ══════════════════════ TOAST ══════════════════════
 let toastTmo = null;
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTmo);
-  toastTmo = setTimeout(() => el.classList.remove('show'), 2000);
+  toastTmo = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
-// ===================== UI HELPERS =====================
-function openOv(id) {
-  document.getElementById(id)?.classList.add('open');
-}
-function closeOv(id) {
-  document.getElementById(id)?.classList.remove('open');
-}
-function closeAll() {
-  document.querySelectorAll('.ov.open').forEach(el => el.classList.remove('open'));
-}
+// ══════════════════════ UI HELPERS ══════════════════════
+function openOv(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeOv(id) { document.getElementById(id)?.classList.remove('open'); }
+function closeAll()  { document.querySelectorAll('.ov.open').forEach(el => el.classList.remove('open')); }
 
-// ===================== APPLY SETTINGS =====================
+// ══════════════════════ APPLY SETTINGS ══════════════════════
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
 function applySettings() {
   const s = S.settings;
-  document.documentElement.dataset.theme = s.theme;
   document.documentElement.style.setProperty('--accent', s.accent);
-  const rgb = hexToRgb(s.accent);
-  document.documentElement.style.setProperty('--accent-rgb', rgb);
+  document.documentElement.style.setProperty('--accent-rgb', hexToRgb(s.accent));
   document.documentElement.style.setProperty('--font-size', s.fontSize + 'px');
-  // wallpaper
   const bg = document.getElementById('chat-bg');
   if (s.wallpaper) {
     bg.style.backgroundImage = `url(${s.wallpaper})`;
@@ -110,42 +114,32 @@ function applySettings() {
   } else {
     bg.style.backgroundImage = '';
   }
-  // avatars
-  setAvatarEl('partner-av', s.partnerAvatar);
-  setAvatarEl('my-av', s.myAvatar);
-  // names
+  setAvEl('partner-av', s.partnerAvatar);
+  setAvEl('my-av', s.myAvatar);
+  setAvEl('t-av', s.partnerAvatar, true);
+  setAvEl('c-av-in', s.partnerAvatar);
+  setAvEl('c-av-act', s.partnerAvatar);
   document.getElementById('partner-nm').textContent = s.partnerName;
   document.getElementById('my-nm').textContent = s.myName;
-  document.getElementById('partner-st').textContent = s.partnerStatus;
-  document.getElementById('my-st').textContent = s.myStatus;
-  // typing avatar
-  setAvatarEl('t-av', s.partnerAvatar, true);
-  // call avatars
-  setAvatarEl('c-av-in', s.partnerAvatar);
-  setAvatarEl('c-av-act', s.partnerAvatar);
   document.getElementById('c-nm-in').textContent = s.partnerName;
   document.getElementById('c-nm-act').textContent = s.partnerName;
-  // bubble css
   document.getElementById('bbl-css-tag').textContent = s.bubbleCSS || '';
+  updateStatusDisplay();
 }
-function setAvatarEl(id, src, small) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (src) {
-    el.innerHTML = `<img src="${src}" alt="">`;
-  } else {
-    el.innerHTML = `<i class="fas fa-user" style="font-size:${small?'10':'14'}px;"></i>`;
-  }
+function setAvEl(id, src, small) {
+  const el = document.getElementById(id); if (!el) return;
+  el.innerHTML = src ? `<img src="${src}" alt="">` : `<i class="fas fa-user" style="font-size:${small?'9':'13'}px;"></i>`;
 }
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return `${r},${g},${b}`;
+function updateStatusDisplay() {
+  const me = S.currentStatus.me.join(' | ') || '在线';
+  const pt = S.currentStatus.partner.join(' | ') || '在线';
+  document.getElementById('my-st').textContent = me;
+  document.getElementById('partner-st').textContent = pt;
 }
 
-// ===================== MESSAGES =====================
+// ══════════════════════ MESSAGES ══════════════════════
 function fmtTime(ts) {
-  const d = new Date(ts);
-  return d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  return new Date(ts).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
 }
 function fmtDate(ts) {
   const d = new Date(ts), now = new Date();
@@ -154,43 +148,45 @@ function fmtDate(ts) {
   if (diff === 1) return '昨天';
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 function renderMessages() {
   const wrap = document.getElementById('chat-wrap');
-  // remove all except bg and typing
   const bg = document.getElementById('chat-bg');
   const ti = document.getElementById('typing-ind');
   wrap.innerHTML = '';
   wrap.appendChild(bg);
   wrap.appendChild(ti);
-
   let lastDate = null;
   S.messages.forEach(m => {
     const d = fmtDate(m.ts);
-    if (d !== lastDate) {
-      const div = document.createElement('div');
-      div.className = 'date-div';
-      div.textContent = d;
-      wrap.insertBefore(div, ti);
-      lastDate = d;
-    }
+    if (d !== lastDate) { wrap.insertBefore(makeDateDiv(d), ti); lastDate = d; }
     wrap.insertBefore(buildMsgEl(m), ti);
   });
   scrollBottom();
 }
 
-function buildMsgEl(m) {
-  const isSent = m.side === 'sent';
-  const s = S.settings;
+function makeDateDiv(label) {
+  const d = document.createElement('div');
+  d.className = 'date-div'; d.textContent = label; return d;
+}
 
+function buildMsgEl(m) {
   if (m.type === 'poke') {
-    const row = document.createElement('div');
-    row.className = 'poke-row';
-    row.dataset.id = m.id;
-    row.textContent = m.text;
-    return row;
+    const r = document.createElement('div');
+    r.className = 'poke-row'; r.dataset.id = m.id;
+    r.textContent = m.text; return r;
+  }
+  if (m.type === 'sys') {
+    const r = document.createElement('div');
+    r.className = 'sys-row'; r.dataset.id = m.id;
+    r.textContent = m.text;
+    if (m.noteId) r.addEventListener('click', () => viewNoteById(m.noteId));
+    return r;
   }
 
+  const isSent = m.side === 'sent';
+  const s = S.settings;
   const row = document.createElement('div');
   row.className = `msg-row ${isSent ? 'sent' : 'recv'}`;
   row.dataset.id = m.id;
@@ -198,14 +194,13 @@ function buildMsgEl(m) {
   const avSrc = isSent ? s.myAvatar : s.partnerAvatar;
   const av = document.createElement('div');
   av.className = 'msg-av';
-  av.innerHTML = avSrc ? `<img src="${avSrc}" alt="">` : `<i class="fas fa-user" style="font-size:12px;"></i>`;
+  av.innerHTML = avSrc ? `<img src="${avSrc}" alt="">` : `<i class="fas fa-user" style="font-size:11px;"></i>`;
   av.addEventListener('dblclick', () => sendPoke(isSent));
-  av.addEventListener('click', (e) => { e.stopPropagation(); });
+  av.addEventListener('click', e => e.stopPropagation());
 
   const body = document.createElement('div');
   body.className = 'msg-body';
 
-  // quote bar
   if (m.quoteText) {
     const q = document.createElement('div');
     q.className = 'quote-bar';
@@ -213,98 +208,66 @@ function buildMsgEl(m) {
     body.appendChild(q);
   }
 
-  // bubble
   const bbl = document.createElement('div');
-
-  if (m.type === 'note') {
-    bbl.className = 'msg-bbl note-bbl';
-    bbl.innerHTML = `<i class="fas fa-scroll"></i><span>${m.text}</span>`;
-    bbl.addEventListener('click', () => viewNote(m));
-  } else if (m.type === 'letter-notify') {
-    bbl.className = 'msg-bbl letter-bbl';
-    bbl.innerHTML = `<i class="fas fa-envelope"></i><span>${m.text}</span>`;
-    bbl.addEventListener('click', () => viewLetterById(m.letterId, m.side === 'recv'));
-  } else if (m.type === 'image') {
+  if (m.type === 'image') {
     bbl.className = 'msg-bbl img-bbl';
     const img = document.createElement('img');
     img.src = m.src;
-    img.addEventListener('click', () => {
-      window.open(m.src, '_blank');
-    });
+    img.addEventListener('click', () => window.open(m.src, '_blank'));
     bbl.appendChild(img);
   } else {
     bbl.className = 'msg-bbl';
     bbl.textContent = m.text;
   }
 
-  // long press / right click for context menu
-  if (m.type !== 'note' && m.type !== 'letter-notify') {
-    let pressTimer;
-    const showCtx = (x, y) => {
-      ctxTarget = m;
-      const ctx = document.getElementById('ctx');
-      ctx.style.left = Math.min(x, window.innerWidth - 160) + 'px';
-      ctx.style.top = Math.min(y, window.innerHeight - 120) + 'px';
-      ctx.classList.add('open');
-    };
-    bbl.addEventListener('contextmenu', e => { e.preventDefault(); showCtx(e.clientX, e.clientY); });
-    bbl.addEventListener('touchstart', e => { pressTimer = setTimeout(() => { const t = e.touches[0]; showCtx(t.clientX, t.clientY); }, 500); }, {passive:true});
-    bbl.addEventListener('touchend', () => clearTimeout(pressTimer));
-    bbl.addEventListener('touchmove', () => clearTimeout(pressTimer));
-  }
+  // context menu
+  let pressTimer;
+  const showCtx = (x, y) => {
+    ctxTarget = m;
+    const ctx = document.getElementById('ctx');
+    ctx.style.left = Math.min(x, window.innerWidth - 160) + 'px';
+    ctx.style.top  = Math.min(y, window.innerHeight - 130) + 'px';
+    ctx.classList.add('open');
+  };
+  bbl.addEventListener('contextmenu', e => { e.preventDefault(); showCtx(e.clientX, e.clientY); });
+  bbl.addEventListener('touchstart', e => { pressTimer = setTimeout(() => { const t = e.touches[0]; showCtx(t.clientX, t.clientY); }, 500); }, {passive:true});
+  bbl.addEventListener('touchend', () => clearTimeout(pressTimer));
+  bbl.addEventListener('touchmove', () => clearTimeout(pressTimer));
 
   body.appendChild(bbl);
-
   const time = document.createElement('div');
-  time.className = 'msg-time';
-  time.textContent = fmtTime(m.ts);
+  time.className = 'msg-time'; time.textContent = fmtTime(m.ts);
   body.appendChild(time);
 
-  if (isSent) {
-    row.appendChild(body);
-    row.appendChild(av);
-  } else {
-    row.appendChild(av);
-    row.appendChild(body);
-  }
+  if (isSent) { row.appendChild(body); row.appendChild(av); }
+  else        { row.appendChild(av);   row.appendChild(body); }
   return row;
 }
 
 function addMessage(m) {
-  S.messages.push(m);
-  save();
+  S.messages.push(m); save();
   const wrap = document.getElementById('chat-wrap');
   const ti = document.getElementById('typing-ind');
-  // check date divider
-  if (S.messages.length >= 2) {
-    const prev = S.messages[S.messages.length - 2];
-    if (fmtDate(prev.ts) !== fmtDate(m.ts)) {
-      const div = document.createElement('div');
-      div.className = 'date-div';
-      div.textContent = fmtDate(m.ts);
-      wrap.insertBefore(div, ti);
-    }
-  } else {
-    const div = document.createElement('div');
-    div.className = 'date-div';
-    div.textContent = fmtDate(m.ts);
-    wrap.insertBefore(div, ti);
+  if (S.messages.length <= 1 || fmtDate(S.messages[S.messages.length-2].ts) !== fmtDate(m.ts)) {
+    wrap.insertBefore(makeDateDiv(fmtDate(m.ts)), ti);
   }
   wrap.insertBefore(buildMsgEl(m), ti);
-  scrollBottom();
-  playKakao();
+  scrollBottom(); playSound();
 }
 
 function scrollBottom() {
   const w = document.getElementById('chat-wrap');
-  w.scrollTop = w.scrollHeight;
+  requestAnimationFrame(() => { w.scrollTop = w.scrollHeight; });
 }
 
-function uid() {
-  return Date.now() + Math.random().toString(36).slice(2,7);
-}
+// ══════════════════════ SEND ══════════════════════
+let replyTarget = null;
+let ctxTarget   = null;
+let avTarget    = null;
+let editCallback = null;
+let noteSender  = 'me';
+let noteImgSrc  = null;
 
-// ===================== SEND =====================
 function sendMsg(text, opts = {}) {
   if (!text && !opts.src) return;
   const m = {
@@ -313,764 +276,874 @@ function sendMsg(text, opts = {}) {
     text: text || '',
     src: opts.src || null,
     quoteText: opts.quoteText || null,
-    quoteId: opts.quoteId || null
   };
   addMessage(m);
   clearReply();
-  scheduleReply(m);
+  scheduleReply();
 }
 
-function scheduleReply(triggerMsg) {
-  if (S.flashcards.length === 0) return;
-  const min = S.settings.replyMin * 1000;
-  const max = S.settings.replyMax * 1000;
-  const delay = min + Math.random() * (max - min);
+function doSend() {
+  const inp = document.getElementById('msg-in');
+  const text = inp.value.trim(); if (!text) return;
+  closeEmojiPanel(); closePlusMenu();
+  sendMsg(text, { quoteText: replyTarget?.text || null });
+  inp.value = ''; inp.style.height = 'auto';
+}
 
+// ── REPLY SCHEDULING ──
+function scheduleReply() {
+  const enabled = allCards().length > 0;
+  if (!enabled) return;
+  const { minSec, maxSec } = S.settings.replyDelay;
+  const delay = (minSec + Math.random() * (maxSec - minSec)) * 1000;
   if (S.settings.typing) {
     setTimeout(() => {
-      document.getElementById('typing-ind').classList.add('vis');
-      scrollBottom();
+      const ti = document.getElementById('typing-ind');
+      ti.classList.add('vis'); scrollBottom();
     }, delay * 0.4);
   }
-
   setTimeout(() => {
     document.getElementById('typing-ind').classList.remove('vis');
-    const card = S.flashcards[Math.floor(Math.random() * S.flashcards.length)];
-    addMessage({
-      id: uid(), ts: Date.now(), side: 'recv',
-      type: 'text', text: card, quoteText: null
-    });
+    sendPartnerMsg();
   }, delay);
 }
 
-// ===================== POKE =====================
-function sendPoke(isSent) {
-  const s = S.settings;
-  const name = isSent ? s.myName : s.partnerName;
-  const m = {
-    id: uid(), ts: Date.now(), side: isSent ? 'sent' : 'recv',
-    type: 'poke',
-    text: `${name} 拍了拍你`
-  };
-  addMessage(m);
+// ── AUTO SEND ──
+let autoSendTimer = null;
+function scheduleAutoSend() {
+  clearTimeout(autoSendTimer);
+  if (!S.settings.autoSend.enabled) return;
+  const { minMin, maxMin } = S.settings.autoSend;
+  const delay = (minMin + Math.random() * (maxMin - minMin)) * 60000;
+  autoSendTimer = setTimeout(() => {
+    if (allCards().length > 0) sendPartnerMsg();
+    scheduleAutoSend();
+  }, delay);
 }
 
-// ===================== IMAGE =====================
+// ── PARTNER SENDS ──
+function allCards() {
+  const cards = [];
+  S.wordcards.groups.forEach(g => g.cards.forEach(c => { if (!c.disabled) cards.push(c.text); }));
+  return cards;
+}
+function pickCards() {
+  const cards = allCards(); if (!cards.length) return null;
+  const isCombo = Math.random() < 0.5;
+  if (!isCombo) return cards[Math.floor(Math.random() * cards.length)];
+  const count = 1 + Math.floor(Math.random() * 5);
+  const picked = new Set();
+  while (picked.size < Math.min(count, cards.length)) {
+    picked.add(cards[Math.floor(Math.random() * cards.length)]);
+  }
+  return [...picked].join(' ');
+}
+function sendPartnerMsg() {
+  const text = pickCards(); if (!text) return;
+  addMessage({ id: uid(), ts: Date.now(), side: 'recv', type: 'text', text, quoteText: null });
+}
+
+// ── POKE ──
+function sendPoke(isSent) {
+  const name = isSent ? S.settings.myName : S.settings.partnerName;
+  addMessage({ id: uid(), ts: Date.now(), side: isSent ? 'sent' : 'recv', type: 'poke', text: `${name} 拍了拍你` });
+}
+
+// ═══════════════════════ IMAGE ═══════════════════════
 document.getElementById('fi-img').addEventListener('change', function() {
   const f = this.files[0]; if (!f) return;
   const r = new FileReader();
   r.onload = e => sendMsg('', {type:'image', src:e.target.result});
-  r.readAsDataURL(f);
-  this.value = '';
+  r.readAsDataURL(f); this.value = '';
 });
-document.getElementById('btn-img').addEventListener('click', () => {
-  document.getElementById('fi-img').click();
+document.getElementById('fi-camera').addEventListener('change', function() {
+  const f = this.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => sendMsg('', {type:'image', src:e.target.result});
+  r.readAsDataURL(f); this.value = '';
 });
+document.getElementById('pm-gallery').addEventListener('click', () => { closePlusMenu(); document.getElementById('fi-img').click(); });
+document.getElementById('pm-camera').addEventListener('click', () => { closePlusMenu(); document.getElementById('fi-camera').click(); });
 
-// ===================== REPLY PREVIEW =====================
+// ═══════════════════════ REPLY PREVIEW ═══════════════════════
 function setReply(m) {
   replyTarget = m;
   const prev = document.getElementById('reply-prev');
-  const txt = document.getElementById('rp-txt');
-  txt.textContent = `↩ ${m.text || '[图片]'}`;
+  document.getElementById('rp-txt').textContent = `↩ ${m.text || '[图片]'}`;
   prev.style.display = 'block';
 }
 function clearReply() {
   replyTarget = null;
   document.getElementById('reply-prev').style.display = 'none';
-  document.getElementById('rp-txt').textContent = '';
 }
 document.getElementById('rp-close').addEventListener('click', clearReply);
 
-// ===================== EMOJI =====================
+// ═══════════════════════ EMOJI PANEL ═══════════════════════
 const EMOJI_CATS = {
-  '😀 表情': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
-  '❤️ 心情': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕','🛑','⛔','📛','🚫'],
-  '👍 手势': ['👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦵','🦿','🦶','👂','🦻','👃','🧠','🦷','🦴','👀','👁','👅','👄'],
-  '🐱 动物': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒'],
-  '🌸 自然': ['🌸','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🎋','🎍','🍀','🍁','🍂','🍃','🍄','🌾','💐','🌊','🌈','⛅','☁️','🌤','⛈','🌧','❄️','☃️','⛄','🌙','🌟','⭐','✨','💫','🌠','🔥','💧','🌊'],
-  '🍎 食物': ['🍎','🍊','🍋','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥝','🍅','🥥','🥑','🍆','🥦','🥬','🌽','🌶','🥒','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🍜','🍝','🍣','🍱','🍛','🍲','🍤','🦞','🦐','🍙','🍚','🍘','🍥','🥮','🍡','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🧂','🥤','☕','🍵','🧃','🥛','🍺','🍻'],
-  '🎉 活动': ['🎉','🎊','🎈','🎀','🎁','🎗','🎟','🎫','🎖','🏆','🥇','🥈','🥉','⚽','🏀','🏈','⚾','🥎','🏐','🏉','🎾','🥏','🎳','🏏','🏑','🏒','🥍','🏓','🏸','🥊','🥋','🎽','🛹','🛷','⛸','🥌','🎿','⛷','🏂','🪂','🏋️','🤸','🤼','🤺','🤾','⛹️','🤻','🏊','🧗','🚵','🏇','🚴','🏄','🚣','🧘','🧑','🚵'],
-  '💬 符号': ['💯','🔝','🆙','🆒','🆕','🆓','🔜','🔛','🔙','⏫','🔼','⏪','⏩','🔀','🔃','🎵','🎶','✅','❎','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔺','🔻','🔷','🔶','🔹','🔸','🔲','🔳','▪️','▫️','◾','◽','◼️','◻️'],
+  '😀 表情': ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
+  '❤️ 心情': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','🫀','💌','🫶','✨','💫','⭐','🌟','🌠','🎇','🎆','🌈','☁️','⛅','🌤','🌙','🌛','🌜','🌝','🌚','🌞'],
+  '👍 手势': ['👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','💪','🫶'],
+  '🐱 动物': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🐢','🐍','🦎','🐙','🦑','🦐','🦀','🐡','🐟','🐬','🐳','🦈'],
+  '🌸 自然': ['🌸','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🍀','🍁','🍂','🍃','🍄','🌾','💐','🌊','🔥','💧','🌬','❄️','☃️','⛄'],
+  '🍎 食物': ['🍎','🍊','🍋','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥝','🍅','🥑','🍔','🍟','🍕','🌮','🍜','🍝','🍣','🍱','🍛','🧁','🍰','🎂','🍭','🍬','🍫','☕','🍵','🧃','🥛','🍺','🧋'],
+  '🎉 活动': ['🎉','🎊','🎈','🎀','🎁','🏆','🥇','🎵','🎶','🎮','🎯','🎲','🎭','🎨','📚','✏️','💻','📱','📷','🎬','🎤','🎧','🛁','🛏','🏠','🌍','✈️','🚀','🎠','🎡'],
+  '💬 符号': ['💯','✅','❌','⭕','❓','❗','💢','💬','💭','💤','🔔','🔕','🎵','🔝','🆙','🆒','🆕','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪'],
 };
 
-const KAOMOJI = [
-  '(´・ω・`)','( ˘ω˘ )','（＾▽＾）','(✿◠‿◠)','(｡♥‿♥｡)',
-  '(≧∇≦)','(^///^)','(●´ω｀●)','(づ￣ 3￣)づ','(ง •̀_•́)ง',
-  '╰(*°▽°*)╯','（＾－＾）','(っ˘ω˘ς )','(｡•́︿•̀｡)','(T▽T)',
-  '(；′⌒`)','_(:з」∠)_','(；◔д◔)','ヽ(°〇°)ﾉ','Σ(っ°Д°;)っ',
-  '(´；ω；`)','(＾▽＾；)','凸(｀0´)凸','(；´д｀)ゞ','(〃＞＿＜;〃)',
-  'o(*￣▽￣*)ブ','(*＾▽＾*)','♪(´▽｀)','(●´∀｀●)','⁄(⁄ ⁄•⁄ω⁄•⁄ ⁄)⁄',
-  '(灬°ω°灬)','( •̀ ω •́ )✧','ヾ(≧▽≦*)o','(●—●)','눈_눈',
-  'QAQ','TAT','o(￣┰￣*)ゞ','(๑•̀ㅂ•́)و✧','(˘▽˘>ԅ( ˘⌣˘)',
+const KAOMOJI_BUILTIN = [
+  '(´・ω・`)','( ˘ω˘ )','（＾▽＾）','(✿◠‿◠)','(｡♥‿♥｡)','(≧∇≦)','(^///^)',
+  '(●´ω｀●)','(づ￣ 3￣)づ','(ง •̀_•́)ง','╰(*°▽°*)╯','（＾－＾）',
+  '(っ˘ω˘ς )','(｡•́︿•̀｡)','(T▽T)','(；′⌒`)','_(:з」∠)_','(；◔д◔)',
+  'ヽ(°〇°)ﾉ','Σ(っ°Д°;)っ','(´；ω；`)','(＾▽＾；)','凸(｀0´)凸',
+  '(〃＞＿＜;〃)','o(*￣▽￣*)ブ','(*＾▽＾*)','♪(´▽｀)','(●´∀｀●)',
+  '(灬°ω°灬)','( •̀ ω •́ )✧','ヾ(≧▽≦*)o','눈_눈','QAQ','TAT',
+  '(๑•̀ㅂ•́)و✧','(˘▽˘>ԅ( ˘⌣˘)','(っ´▽`)っ','⁄(⁄ ⁄•⁄ω⁄•⁄ ⁄)⁄',
 ];
 
+let emojiTabCurrent = 'emoji';
+
 function buildEmojiPanel() {
-  const grid = document.getElementById('e-grid');
-  function show(tab) {
-    grid.innerHTML = '';
-    emojiTab = tab;
+  const content = document.getElementById('e-content');
+  function showTab(tab) {
+    emojiTabCurrent = tab;
+    content.innerHTML = '';
+    content.style.cssText = '';
     document.querySelectorAll('.e-tab').forEach(t => t.classList.toggle('on', t.dataset.etab === tab));
     if (tab === 'emoji') {
       Object.entries(EMOJI_CATS).forEach(([cat, items]) => {
-        const label = document.createElement('div');
-        label.style.cssText = 'width:100%;font-size:10px;color:var(--text2);padding:4px 2px 2px;';
-        label.textContent = cat;
-        grid.appendChild(label);
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'width:100%;font-size:10px;color:var(--text2);padding:4px 2px 2px;';
+        lbl.textContent = cat; content.appendChild(lbl);
         items.forEach(e => {
           const el = document.createElement('div');
-          el.className = 'e-item';
-          el.textContent = e;
+          el.className = 'e-item'; el.textContent = e;
           el.addEventListener('click', () => insertText(e));
-          grid.appendChild(el);
+          content.appendChild(el);
         });
       });
     } else if (tab === 'kaomoji') {
-      KAOMOJI.forEach(k => {
+      const all = [...KAOMOJI_BUILTIN, ...S.customKaomoji];
+      all.forEach(k => {
         const el = document.createElement('div');
-        el.className = 'e-item km-item';
-        el.textContent = k;
+        el.className = 'e-item km-item'; el.textContent = k;
         el.addEventListener('click', () => insertText(k));
-        grid.appendChild(el);
+        content.appendChild(el);
       });
     } else if (tab === 'sticker') {
-      renderStickerPicker();
+      content.style.cssText = 'display:flex;flex-wrap:wrap;padding:5px;gap:5px;overflow-y:auto;flex:1;width:100%;';
+      if (!S.stickers.length) {
+        const hint = document.createElement('div');
+        hint.className = 'empty'; hint.style.width='100%';
+        hint.innerHTML = '<i class="fas fa-images"></i>在高级设置 > 表情包 中添加';
+        content.appendChild(hint); return;
+      }
+      S.stickers.forEach(stk => {
+        const el = document.createElement('div');
+        el.className = 'stk-item-ep';
+        el.innerHTML = `<img src="${stk.src}" alt="">`;
+        el.addEventListener('click', () => {
+          sendMsg('', {type:'image', src:stk.src});
+          closeEmojiPanel();
+        });
+        content.appendChild(el);
+      });
     }
   }
-  document.querySelectorAll('.e-tab').forEach(t => {
-    t.addEventListener('click', () => show(t.dataset.etab));
-  });
-  show('emoji');
-}
-
-function renderStickerPicker() {
-  const grid = document.getElementById('e-grid');
-  grid.innerHTML = '';
-  grid.style.cssText = 'display:flex;flex-wrap:wrap;padding:7px;gap:5px;overflow-y:auto;flex:1;';
-
-  // My stickers
-  const ml = document.createElement('div');
-  ml.style.cssText = 'width:100%;font-size:10px;color:var(--text2);padding:4px 2px 2px;';
-  ml.textContent = '我的贴图';
-  grid.appendChild(ml);
-  S.stickers.my.forEach((src, i) => {
-    const el = document.createElement('div');
-    el.className = 'stk-item';
-    el.innerHTML = `<img src="${src}" alt="">`;
-    el.addEventListener('click', () => sendSticker(src, 'sent'));
-    grid.appendChild(el);
-  });
-
-  const pl = document.createElement('div');
-  pl.style.cssText = 'width:100%;font-size:10px;color:var(--text2);padding:8px 2px 2px;';
-  pl.textContent = '梦角的贴图';
-  grid.appendChild(pl);
-  S.stickers.partner.forEach((src, i) => {
-    const el = document.createElement('div');
-    el.className = 'stk-item';
-    el.innerHTML = `<img src="${src}" alt="">`;
-    el.addEventListener('click', () => sendSticker(src, 'recv'));
-    grid.appendChild(el);
-  });
-
-  if (S.stickers.my.length === 0 && S.stickers.partner.length === 0) {
-    const hint = document.createElement('div');
-    hint.className = 'empty';
-    hint.innerHTML = '<i class="fas fa-images"></i>在高级功能 > 贴图库 中添加贴图';
-    grid.appendChild(hint);
-  }
-}
-
-function sendSticker(src, side) {
-  const m = { id:uid(), ts:Date.now(), side, type:'image', src, quoteText:null };
-  addMessage(m);
-  closeEmojiPanel();
+  document.querySelectorAll('.e-tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.etab)));
+  showTab('emoji');
 }
 
 function insertText(t) {
   const inp = document.getElementById('msg-in');
-  const pos = inp.selectionStart;
-  const val = inp.value;
+  const pos = inp.selectionStart, val = inp.value;
   inp.value = val.slice(0, pos) + t + val.slice(pos);
   inp.selectionStart = inp.selectionEnd = pos + t.length;
   inp.focus();
 }
-
 function toggleEmojiPanel() {
-  const p = document.getElementById('emoji-panel');
-  p.classList.toggle('open');
+  closePlusMenu();
+  document.getElementById('emoji-panel').classList.toggle('open');
 }
-function closeEmojiPanel() {
-  document.getElementById('emoji-panel').classList.remove('open');
+function closeEmojiPanel() { document.getElementById('emoji-panel').classList.remove('open'); }
+function closePlusMenu()   { document.getElementById('plus-menu').classList.remove('open'); }
+function togglePlusMenu()  {
+  closeEmojiPanel();
+  document.getElementById('plus-menu').classList.toggle('open');
 }
 
-// ===================== NOTES =====================
+// ═══════════════════════ NOTES ═══════════════════════
 function openNoteModal() {
-  // populate presets
-  const presets = document.getElementById('note-presets');
-  presets.innerHTML = '';
-  S.noteOptions.forEach(opt => {
-    const el = document.createElement('div');
-    el.className = 'tag';
-    el.textContent = opt;
-    el.addEventListener('click', () => {
-      document.getElementById('note-in').value = opt;
-      presets.querySelectorAll('.tag').forEach(t => t.classList.remove('sel'));
-      el.classList.add('sel');
-    });
-    presets.appendChild(el);
-  });
-  noteSender = 'me';
+  noteSender = 'me'; noteImgSrc = null;
   document.getElementById('nsb-me').classList.add('on');
   document.getElementById('nsb-pt').classList.remove('on');
   document.getElementById('note-in').value = '';
+  document.getElementById('note-img-name').textContent = '';
+  document.getElementById('note-img-clr').style.display = 'none';
   openOv('ov-note-send');
 }
-
+document.querySelectorAll('[data-s]').forEach(el => {
+  el.addEventListener('click', () => {
+    noteSender = el.dataset.s;
+    document.getElementById('nsb-me').classList.toggle('on', noteSender === 'me');
+    document.getElementById('nsb-pt').classList.toggle('on', noteSender === 'partner');
+  });
+});
+document.getElementById('btn-note-img').addEventListener('click', () => document.getElementById('fi-note-img').click());
+document.getElementById('fi-note-img').addEventListener('change', function() {
+  const f = this.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    noteImgSrc = e.target.result;
+    document.getElementById('note-img-name').textContent = f.name;
+    document.getElementById('note-img-clr').style.display = '';
+  };
+  r.readAsDataURL(f); this.value = '';
+});
+document.getElementById('note-img-clr').addEventListener('click', () => {
+  noteImgSrc = null;
+  document.getElementById('note-img-name').textContent = '';
+  document.getElementById('note-img-clr').style.display = 'none';
+});
 document.getElementById('btn-send-note').addEventListener('click', () => {
   const text = document.getElementById('note-in').value.trim();
-  if (!text) return toast('请输入内容');
-  const side = noteSender === 'me' ? 'sent' : 'recv';
-  const m = { id:uid(), ts:Date.now(), side, type:'note', text, quoteText:null };
-  addMessage(m);
+  if (!text && !noteImgSrc) return toast('请输入内容');
+  const note = {
+    id: uid(), ts: Date.now(),
+    from: noteSender, text, imgSrc: noteImgSrc,
+    read: false, pinned: false
+  };
+  S.notes.push(note); save();
+  const fromName = noteSender === 'me' ? S.settings.myName : S.settings.partnerName;
+  addMessage({
+    id: uid(), ts: Date.now(),
+    side: noteSender === 'me' ? 'sent' : 'recv',
+    type: 'sys',
+    text: `📌 ${fromName}给你递了一张小纸条，点击查看`,
+    noteId: note.id
+  });
+  updateNotesBadge();
   closeOv('ov-note-send');
+  toast('小纸条已发出');
 });
 
-function viewNote(m) {
-  document.getElementById('note-view-txt').textContent = m.text;
-  const s = S.settings;
-  const sender = m.side === 'sent' ? s.myName : s.partnerName;
-  document.getElementById('note-view-meta').textContent = `${sender} · ${new Date(m.ts).toLocaleString('zh-CN')}`;
+function viewNoteById(id) {
+  const note = S.notes.find(n => n.id === id); if (!note) return;
+  note.read = true; save(); updateNotesBadge();
+  renderNotesList();
+  viewNote(note);
+}
+function viewNote(note) {
+  const from = note.from === 'me' ? S.settings.myName : S.settings.partnerName;
+  document.getElementById('note-view-meta').textContent = `${from} · ${new Date(note.ts).toLocaleString('zh-CN')}`;
+  document.getElementById('note-view-txt').textContent = note.text || '';
+  const img = document.getElementById('note-view-img');
+  if (note.imgSrc) { img.src = note.imgSrc; img.style.display = ''; }
+  else { img.style.display = 'none'; }
   openOv('ov-note-view');
 }
-
-// ===================== NOTE OPTIONS MANAGEMENT =====================
-function renderNoteOpts() {
-  const list = document.getElementById('nopt-list');
+function renderNotesList() {
+  const list = document.getElementById('notes-list');
+  if (!S.notes.length) { list.innerHTML = '<div class="empty"><i class="fas fa-thumbtack"></i>暂无小纸条</div>'; return; }
+  const sorted = [...S.notes].sort((a,b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.ts - a.ts;
+  });
   list.innerHTML = '';
-  S.noteOptions.forEach((opt, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);';
-    row.innerHTML = `<span style="font-size:13px;color:var(--text);">${opt}</span><button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:12px;" data-i="${i}">✕</button>`;
-    row.querySelector('button').addEventListener('click', () => {
-      S.noteOptions.splice(i, 1); save(); renderNoteOpts();
-    });
-    list.appendChild(row);
-  });
-  if (!S.noteOptions.length) {
-    list.innerHTML = '<div class="empty"><i class="fas fa-scroll"></i>暂无预设选项</div>';
-  }
-}
-document.getElementById('btn-add-nopt').addEventListener('click', () => {
-  const v = document.getElementById('new-nopt-in').value.trim();
-  if (!v) return;
-  S.noteOptions.push(v);
-  save(); renderNoteOpts();
-  document.getElementById('new-nopt-in').value = '';
-});
-
-// ===================== FLASHCARDS =====================
-function renderCards() {
-  const list = document.getElementById('card-list');
-  list.innerHTML = '';
-  if (!S.flashcards.length) {
-    list.innerHTML = '<div class="empty"><i class="fas fa-layer-group"></i>暂无字卡，梦角无法回复</div>';
-    return;
-  }
-  S.flashcards.forEach((c, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:8px;';
-    row.innerHTML = `<div style="font-size:13px;color:var(--text);flex:1;line-height:1.5;word-break:break-word;">${c}</div><button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:12px;flex-shrink:0;" data-i="${i}">✕</button>`;
-    row.querySelector('button').addEventListener('click', () => {
-      S.flashcards.splice(i, 1); save(); renderCards();
-    });
-    list.appendChild(row);
-  });
-}
-document.getElementById('btn-add-card').addEventListener('click', () => {
-  const v = document.getElementById('new-card-in').value.trim();
-  if (!v) return;
-  S.flashcards.push(v); save(); renderCards();
-  document.getElementById('new-card-in').value = '';
-});
-
-// ===================== ENERGY STATUS =====================
-function renderEnergyOpts() {
-  ['me','pt','rel'].forEach(k => {
-    const key = k === 'me' ? 'me' : k === 'pt' ? 'partner' : 'rel';
-    const list = document.getElementById(`${k}-en-list`);
-    if (!list) return;
-    list.innerHTML = '';
-    S.energyOptions[key].forEach((opt, i) => {
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);';
-      row.innerHTML = `<span style="font-size:12px;color:var(--text);">${opt}</span><button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;" data-i="${i}">✕</button>`;
-      row.querySelector('button').addEventListener('click', () => {
-        S.energyOptions[key].splice(i, 1); save(); renderEnergyOpts();
-      });
-      list.appendChild(row);
-    });
-  });
-}
-['me','pt','rel'].forEach(k => {
-  const key = k === 'me' ? 'me' : k === 'pt' ? 'partner' : 'rel';
-  const btn = document.getElementById(`btn-add-${k}-en`);
-  if (btn) btn.addEventListener('click', () => {
-    const inp = document.getElementById(`new-${k}-en`);
-    const v = inp.value.trim(); if (!v) return;
-    S.energyOptions[key].push(v); save(); renderEnergyOpts();
-    inp.value = '';
-  });
-});
-
-function openEnergyModal() {
-  const s = S.settings.energy;
-  // render option tags
-  ['me','pt','rel'].forEach(k => {
-    const key = k === 'me' ? 'me' : k === 'pt' ? 'partner' : 'rel';
-    const container = document.getElementById(`${k}-en-opts`);
-    container.innerHTML = '';
-    S.energyOptions[key].forEach(opt => {
-      const el = document.createElement('div');
-      el.className = 'tag' + (s[key] === opt ? ' sel' : '');
-      el.textContent = opt;
-      el.addEventListener('click', () => {
-        container.querySelectorAll('.tag').forEach(t => t.classList.remove('sel'));
-        el.classList.add('sel');
-        document.getElementById(`${k}-en-custom`).value = '';
-      });
-      container.appendChild(el);
-    });
-    const customInput = document.getElementById(`${k}-en-custom`);
-    customInput.value = (s[key] && !S.energyOptions[key].includes(s[key])) ? s[key] : '';
-  });
-  openOv('ov-energy');
-}
-
-document.getElementById('btn-save-energy').addEventListener('click', () => {
-  const s = S.settings.energy;
-  ['me','pt','rel'].forEach(k => {
-    const key = k === 'me' ? 'me' : k === 'pt' ? 'partner' : 'rel';
-    const selTag = document.getElementById(`${k}-en-opts`).querySelector('.tag.sel');
-    const custom = document.getElementById(`${k}-en-custom`).value.trim();
-    s[key] = custom || (selTag ? selTag.textContent : s[key]);
-  });
-  // update partner status display
-  updateEnergyDisplay();
-  save();
-  closeOv('ov-energy');
-  toast('能量状态已更新');
-});
-
-function updateEnergyDisplay() {
-  const s = S.settings.energy;
-  const parts = [s.me && `我：${s.me}`, s.partner && `他：${s.partner}`, s.rel && `我们：${s.rel}`].filter(Boolean);
-  document.getElementById('partner-st').textContent = parts.join(' | ') || S.settings.partnerStatus;
-}
-
-// ===================== STICKERS =====================
-function renderStickerMgr() {
-  const renderGroup = (el, arr, key) => {
-    const addBtn = document.getElementById(`btn-add-${key}-stk`);
-    el.innerHTML = '';
-    el.appendChild(addBtn);
-    arr.forEach((src, i) => {
-      const item = document.createElement('div');
-      item.className = 'stk-item';
-      item.innerHTML = `<img src="${src}" alt=""><button style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;" data-i="${i}">✕</button>`;
-      item.querySelector('button').addEventListener('click', e => {
-        e.stopPropagation();
-        arr.splice(i, 1); save(); renderStickerMgr();
-      });
-      el.insertBefore(item, addBtn);
-    });
-  };
-  renderGroup(document.getElementById('mgr-my-stk'), S.stickers.my, 'my');
-  renderGroup(document.getElementById('mgr-pt-stk'), S.stickers.partner, 'pt');
-}
-
-function addStickers(files, arr) {
-  Array.from(files).forEach(f => {
-    const r = new FileReader();
-    r.onload = e => { arr.push(e.target.result); save(); renderStickerMgr(); };
-    r.readAsDataURL(f);
-  });
-}
-document.getElementById('btn-add-my-stk').addEventListener('click', () => document.getElementById('fi-stk-my').click());
-document.getElementById('btn-add-pt-stk').addEventListener('click', () => document.getElementById('fi-stk-pt').click());
-document.getElementById('fi-stk-my').addEventListener('change', function() { addStickers(this.files, S.stickers.my); this.value=''; });
-document.getElementById('fi-stk-pt').addEventListener('change', function() { addStickers(this.files, S.stickers.partner); this.value=''; });
-
-// ===================== ANNIVERSARY =====================
-function renderAnniv() {
-  const list = document.getElementById('an-list');
-  list.innerHTML = '';
-  if (!S.anniversaries.length) {
-    list.innerHTML = '<div class="empty"><i class="fas fa-heart"></i>暂无重要日</div>';
-    return;
-  }
-  const now = Date.now();
-  [...S.anniversaries].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach((an, i) => {
-    const d = new Date(an.date);
-    const diff = Math.round((d - now) / 86400000);
-    const label = diff === 0 ? '就是今天！' : diff > 0 ? `还有 ${diff} 天` : `已过 ${Math.abs(diff)} 天`;
-    const item = document.createElement('div');
-    item.className = 'an-item';
-    const who = an.who === 'me' ? S.settings.myName : an.who === 'partner' ? S.settings.partnerName : '我们';
-    item.innerHTML = `
-      <div class="an-dot"></div>
-      <div class="an-info">
-        <div class="an-name">${an.name}</div>
-        <div class="an-date">${an.date} · ${who}</div>
+  sorted.forEach(n => {
+    const el = document.createElement('div');
+    el.className = `note-item${n.unread || !n.read ? ' unread' : ''}${n.pinned ? ' pinned' : ''}`;
+    const from = n.from === 'me' ? S.settings.myName : S.settings.partnerName;
+    el.innerHTML = `
+      <div class="ni-head">
+        <div class="ni-from">${n.pinned ? '📌 ' : ''}${from}</div>
+        <div class="ni-time">${new Date(n.ts).toLocaleDateString('zh-CN')}</div>
       </div>
-      <div class="an-days">${label}</div>
-      <button class="an-del" data-i="${i}"><i class="fas fa-trash"></i></button>`;
-    item.querySelector('button').addEventListener('click', () => {
-      const idx = S.anniversaries.findIndex(a => a === an);
-      S.anniversaries.splice(idx, 1); save(); renderAnniv();
+      <div class="ni-body">${n.text || '[图片]'}</div>
+      <div class="ni-acts">
+        <button class="btn btn-g btn-sm" data-pin="${n.id}">${n.pinned ? '取消置顶' : '置顶'}</button>
+        <button class="btn btn-d btn-sm" data-del-note="${n.id}">删除</button>
+      </div>`;
+    el.querySelector('.ni-body').addEventListener('click', () => { n.read = true; save(); renderNotesList(); updateNotesBadge(); viewNote(n); });
+    el.querySelector(`[data-pin]`).addEventListener('click', e => { e.stopPropagation(); n.pinned = !n.pinned; save(); renderNotesList(); });
+    el.querySelector(`[data-del-note]`).addEventListener('click', e => {
+      e.stopPropagation();
+      confirm2('确认删除这张小纸条？', () => {
+        S.notes = S.notes.filter(x => x.id !== n.id); save(); renderNotesList(); updateNotesBadge();
+      });
     });
-    list.appendChild(item);
+    list.appendChild(el);
   });
 }
-document.getElementById('btn-add-an').addEventListener('click', () => {
-  const name = document.getElementById('an-name-in').value.trim();
-  const date = document.getElementById('an-date-in').value;
-  const who = document.getElementById('an-who').value;
-  if (!name || !date) return toast('请填写名称和日期');
-  S.anniversaries.push({ name, date, who });
-  save(); renderAnniv();
-  document.getElementById('an-name-in').value = '';
-  document.getElementById('an-date-in').value = '';
+function updateNotesBadge() {
+  const unread = S.notes.filter(n => !n.read).length;
+  const badge = document.getElementById('note-unread-badge');
+  badge.textContent = unread ? `(${unread}未读)` : '';
+}
+
+// ═══════════════════════ ENVELOPES ═══════════════════════
+let envTab = 'write';
+function switchEnvTab(tab) {
+  envTab = tab;
+  document.querySelectorAll('.etab').forEach(t => {
+    const on = t.dataset.etab === tab;
+    t.classList.toggle('on', on);
+    t.style.background = on ? 'var(--accent)' : 'transparent';
+    t.style.color = on ? '#fff' : 'var(--text2)';
+  });
+  document.getElementById('env-write').style.display = tab === 'write' ? '' : 'none';
+  document.getElementById('env-sent').style.display = tab === 'sent' ? '' : 'none';
+  document.getElementById('env-received').style.display = tab === 'received' ? '' : 'none';
+  if (tab === 'sent') renderEnvList('sent');
+  if (tab === 'received') checkAndRenderEnvReceived();
+}
+document.querySelectorAll('.etab').forEach(t => t.addEventListener('click', () => switchEnvTab(t.dataset.etab)));
+
+document.getElementById('btn-send-env').addEventListener('click', () => {
+  const content = document.getElementById('env-in').value.trim();
+  if (!content) return toast('请写点什么');
+  if (allCards().length < 5) return toast('请先至少添加5张字卡');
+  const replyDelay = (10 + Math.random() * 10) * 3600000;
+  const env = { id: uid(), ts: Date.now(), content, replyAt: Date.now() + replyDelay, replied: false, replyContent: '', replyTs: null };
+  S.envelopes.push(env); save();
+  document.getElementById('env-in').value = '';
+  toast('信已寄出 ✉️'); switchEnvTab('sent');
 });
 
-// ===================== LETTERS =====================
-function openLetterModal() {
-  switchLetterTab('write');
-  document.getElementById('ltr-in').value = '';
-  openOv('ov-letter');
-  checkPendingLetters();
-}
-
-function switchLetterTab(tab) {
-  letterTab = tab;
-  document.querySelectorAll('.ltab').forEach(t => {
-    const on = t.dataset.ltab === tab;
-    t.classList.toggle('on', on);
-    if (on) { t.style.background = 'var(--accent)'; t.style.color = '#fff'; }
-    else { t.style.background = 'transparent'; t.style.color = 'var(--text2)'; }
-  });
-  document.getElementById('ltr-write').style.display = tab === 'write' ? '' : 'none';
-  document.getElementById('ltr-out').style.display = tab === 'out' ? '' : 'none';
-  document.getElementById('ltr-in-box').style.display = tab === 'in' ? '' : 'none';
-  document.getElementById('ltr-foot').style.display = tab === 'write' ? '' : 'none';
-
-  if (tab === 'out') renderLetterList('out');
-  if (tab === 'in') renderLetterList('in');
-}
-
-function renderLetterList(type) {
-  const container = document.getElementById(type === 'out' ? 'ltr-out' : 'ltr-in-box');
-  container.innerHTML = '';
-  const letters = S.letters.filter(l => type === 'out' ? l.type === 'outbox' : l.type === 'inbox');
-  if (!letters.length) {
-    container.innerHTML = '<div class="empty"><i class="fas fa-envelope"></i>暂无信件</div>';
-    return;
-  }
-  letters.reverse().forEach(l => {
-    const item = document.createElement('div');
-    item.className = 'ltr-item';
-    const d = new Date(l.ts);
-    const preview = l.content.substring(0, 40) + (l.content.length > 40 ? '…' : '');
-    let meta = d.toLocaleDateString('zh-CN');
-    if (l.type === 'outbox' && !l.replied) {
-      const replyAt = new Date(l.replyAt);
-      const remaining = Math.max(0, Math.round((replyAt - Date.now()) / 3600000));
-      meta += remaining > 0
-        ? ` · <span class="ltr-pending">约 ${remaining} 小时后回信</span>`
-        : ` · <span class="ltr-pending">回信即将到来</span>`;
-    } else if (l.type === 'outbox' && l.replied) {
-      meta += ' · <span style="color:var(--accent);font-size:11px;">已收到回信</span>';
+function checkAndRenderEnvReceived() {
+  S.envelopes.forEach(env => {
+    if (!env.replied && Date.now() >= env.replyAt) {
+      const cards = allCards();
+      if (!cards.length) return;
+      const count = 10 + Math.floor(Math.random() * 11);
+      const picked = new Set();
+      while (picked.size < Math.min(count, cards.length)) picked.add(cards[Math.floor(Math.random() * cards.length)]);
+      env.replyContent = [...picked].join(' ');
+      env.replied = true; env.replyTs = Date.now();
+      save();
     }
-    item.innerHTML = `<div class="ltr-item-title">${l.type === 'outbox' ? '我写给梦角' : '梦角回信'}</div><div class="ltr-item-meta">${preview}</div><div class="ltr-item-meta" style="margin-top:3px;">${meta}</div>`;
-    item.addEventListener('click', () => viewLetter(l));
+  });
+  renderEnvList('received');
+}
+
+function renderEnvList(type) {
+  const container = document.getElementById(type === 'sent' ? 'env-sent' : 'env-received');
+  container.innerHTML = '';
+  const list = S.envelopes.filter(e => type === 'sent' ? true : e.replied).sort((a,b) => b.ts - a.ts);
+  if (!list.length) { container.innerHTML = '<div class="empty"><i class="fas fa-envelope"></i>暂无信件</div>'; return; }
+  list.forEach(env => {
+    const item = document.createElement('div');
+    item.className = 'env-item';
+    const preview = env.content.substring(0, 45) + (env.content.length > 45 ? '…' : '');
+    let statusHtml = '';
+    if (type === 'sent') {
+      if (!env.replied) {
+        const hrs = Math.max(0, Math.round((env.replyAt - Date.now()) / 3600000));
+        statusHtml = `<div class="env-meta"><span class="env-pending">约 ${hrs} 小时后回信</span></div>`;
+      } else {
+        statusHtml = `<div class="env-meta"><span style="color:var(--accent);">已收到回信</span></div>`;
+      }
+    } else {
+      statusHtml = `<div class="env-meta">${new Date(env.replyTs).toLocaleString('zh-CN')}</div>`;
+    }
+    item.innerHTML = `<div class="env-title">${type === 'sent' ? '我写给梦角' : '梦角的回信'}</div><div class="env-meta" style="margin-bottom:3px;">${preview}</div><div class="env-meta">${new Date(env.ts).toLocaleDateString('zh-CN')}</div>${statusHtml}`;
+    item.addEventListener('click', () => viewEnv(env, type));
+    const del = document.createElement('button');
+    del.className = 'btn btn-d btn-sm'; del.style.marginTop='6px'; del.textContent='删除';
+    del.addEventListener('click', e => { e.stopPropagation(); confirm2('确认删除这封信件？', () => { S.envelopes = S.envelopes.filter(x => x.id !== env.id); save(); renderEnvList(type); }); });
+    item.appendChild(del);
     container.appendChild(item);
   });
 }
 
-document.getElementById('btn-send-ltr').addEventListener('click', () => {
-  const content = document.getElementById('ltr-in').value.trim();
-  if (!content) return toast('请写点什么');
-  if (S.flashcards.length < 5) return toast('字卡不足，请至少添加5张字卡');
-  const replyDelay = (10 + Math.random() * 10) * 3600000; // 10-20 hours in ms
-  const letter = {
-    id: uid(), ts: Date.now(), type: 'outbox',
-    content, replied: false,
-    replyAt: Date.now() + replyDelay
-  };
-  S.letters.push(letter);
+function viewEnv(env, type) {
+  const isReply = type === 'received';
+  document.getElementById('env-view-title').textContent = isReply ? '梦角的回信' : '我写给梦角';
+  document.getElementById('env-view-meta').textContent = new Date(isReply ? env.replyTs : env.ts).toLocaleString('zh-CN');
+  document.getElementById('env-view-body').textContent = isReply ? env.replyContent : env.content;
+  openOv('ov-env-view');
+}
+
+// ═══════════════════════ ENERGY STATUS ═══════════════════════
+let energyTabCurrent = 'me';
+function openEnergyModal() {
+  renderEnergyTab(energyTabCurrent);
+  openOv('ov-energy');
+}
+function switchEnergyTab(tab) {
+  energyTabCurrent = tab;
+  document.querySelectorAll('.entab').forEach(t => {
+    const on = t.dataset.entab === tab;
+    t.classList.toggle('on', on);
+    t.style.background = on ? 'var(--accent)' : 'transparent';
+    t.style.color = on ? '#fff' : 'var(--text2)';
+  });
+  document.getElementById('en-me-tab').style.display = tab === 'me' ? '' : 'none';
+  document.getElementById('en-pt-tab').style.display = tab === 'partner' ? '' : 'none';
+  document.getElementById('en-shared-tab').style.display = tab === 'shared' ? '' : 'none';
+  renderEnergyTab(tab);
+}
+document.querySelectorAll('.entab').forEach(t => t.addEventListener('click', () => switchEnergyTab(t.dataset.entab)));
+
+function renderEnergyTab(tab) {
+  if (tab === 'me') renderEnergyTags('me-en-tags', S.statusOptions.me, S.currentStatus.me);
+  else if (tab === 'partner') renderEnergyTags('pt-en-tags', S.statusOptions.partner, S.currentStatus.partner);
+  else if (tab === 'shared') renderSharedTab();
+}
+
+function renderEnergyTags(containerId, options, selected) {
+  const c = document.getElementById(containerId); c.innerHTML = '';
+  options.forEach(opt => {
+    const t = document.createElement('div');
+    t.className = 'tag' + (selected.includes(opt) ? ' sel' : '');
+    t.textContent = opt;
+    t.addEventListener('click', () => t.classList.toggle('sel'));
+    c.appendChild(t);
+  });
+}
+
+function getSelectedTags(containerId) {
+  return [...document.querySelectorAll(`#${containerId} .tag.sel`)].map(t => t.textContent);
+}
+
+document.getElementById('btn-save-me-en').addEventListener('click', () => {
+  const sel = getSelectedTags('me-en-tags');
+  const custom = document.getElementById('me-en-custom').value.trim();
+  S.currentStatus.me = custom ? [...sel, custom] : sel;
+  document.getElementById('me-en-custom').value = '';
+  save(); updateStatusDisplay(); toast('我的状态已更新');
+});
+document.getElementById('btn-save-pt-en').addEventListener('click', () => {
+  const sel = getSelectedTags('pt-en-tags');
+  const custom = document.getElementById('pt-en-custom').value.trim();
+  S.currentStatus.partner = custom ? [...sel, custom] : sel;
+  document.getElementById('pt-en-custom').value = '';
+  save(); updateStatusDisplay(); toast('梦角状态已更新');
+});
+
+// Shared status tab
+function renderSharedTab() {
+  document.getElementById('shared-current').textContent = S.currentStatus.shared || '未设置';
+  renderEnergyTags('shared-tags', S.statusOptions.shared, []);
+  renderSharedProposalArea();
+  renderSharedHistory();
+}
+
+function renderSharedProposalArea() {
+  const area = document.getElementById('shared-proposal-area');
+  area.innerHTML = '';
+  const p = S.sharedProposal;
+  if (!p) return;
+  const box = document.createElement('div');
+  box.className = 'proposal-box';
+  const elapsed = Date.now() - p.ts;
+  const timeout = elapsed > 3600000;
+  if (timeout) {
+    box.innerHTML = `<div class="proposal-val">${p.value}</div><div class="proposal-meta">提议已超时（无回应）</div>`;
+    const clr = document.createElement('button');
+    clr.className = 'btn btn-g btn-sm'; clr.style.marginTop='7px'; clr.textContent = '清除';
+    clr.addEventListener('click', () => { S.sharedProposal = null; save(); renderSharedTab(); });
+    box.appendChild(clr);
+  } else {
+    box.innerHTML = `<div class="proposal-val">${p.value}</div><div class="proposal-meta">⏳ 等待梦角回应…</div>`;
+    const resp = document.createElement('button');
+    resp.className = 'btn btn-p btn-sm'; resp.style.marginTop='7px'; resp.textContent = '梦角回应';
+    resp.addEventListener('click', openProposalRespond);
+    box.appendChild(resp);
+    const cancel = document.createElement('button');
+    cancel.className = 'btn btn-d btn-sm'; cancel.style.marginTop='7px;margin-left:7px'; cancel.textContent = '取消提议';
+    cancel.addEventListener('click', () => { S.sharedProposal = null; save(); renderSharedTab(); });
+    box.appendChild(cancel);
+  }
+  area.appendChild(box);
+}
+
+document.getElementById('btn-propose-shared').addEventListener('click', () => {
+  if (S.sharedProposal) return toast('已有待回应的提议');
+  const sel = document.getElementById('shared-tags').querySelector('.tag.sel');
+  const custom = document.getElementById('shared-custom').value.trim();
+  const value = custom || (sel ? sel.textContent : '');
+  if (!value) return toast('请选择或输入提议状态');
+  S.sharedProposal = { id: uid(), value, ts: Date.now(), denialOptions: S.statusOptions.shared };
+  document.getElementById('shared-custom').value = '';
+  document.querySelectorAll('#shared-tags .tag.sel').forEach(t => t.classList.remove('sel'));
+  save(); renderSharedTab();
+  document.getElementById('energy-dot').classList.add('on');
+  toast('提议已发出，等待梦角回应');
+});
+
+function openProposalRespond() {
+  const p = S.sharedProposal; if (!p) return;
+  document.getElementById('proposal-val-display').textContent = p.value;
+  document.getElementById('proposal-deny-area').style.display = 'none';
+  document.getElementById('proposal-respond-btns').style.display = 'flex';
+  openOv('ov-proposal-respond');
+}
+
+document.getElementById('btn-proposal-yes').addEventListener('click', () => {
+  const p = S.sharedProposal; if (!p) return;
+  S.currentStatus.shared = p.value;
+  S.sharedHistory.unshift({ ts: Date.now(), value: p.value, action: '通过', reason: '' });
+  S.sharedProposal = null;
+  save(); updateStatusDisplay();
+  document.getElementById('energy-dot').classList.remove('on');
+  closeOv('ov-proposal-respond');
+  renderSharedTab(); toast('共同状态已更新');
+});
+
+document.getElementById('btn-proposal-no').addEventListener('click', () => {
+  document.getElementById('proposal-respond-btns').style.display = 'none';
+  document.getElementById('proposal-deny-area').style.display = '';
+  const p = S.sharedProposal;
+  const opts = document.getElementById('deny-reason-opts');
+  opts.innerHTML = '';
+  (p?.denialOptions || []).forEach(opt => {
+    const t = document.createElement('div');
+    t.className = 'tag'; t.textContent = opt;
+    t.addEventListener('click', () => { opts.querySelectorAll('.tag').forEach(x => x.classList.remove('sel')); t.classList.add('sel'); });
+    opts.appendChild(t);
+  });
+});
+
+document.getElementById('btn-confirm-deny').addEventListener('click', () => {
+  const p = S.sharedProposal; if (!p) return;
+  const sel = document.querySelector('#deny-reason-opts .tag.sel');
+  const custom = document.getElementById('deny-custom-reason').value.trim();
+  const reason = custom || (sel ? sel.textContent : '无');
+  S.sharedHistory.unshift({ ts: Date.now(), value: p.value, action: '否定', reason });
+  S.sharedProposal = null;
+  document.getElementById('deny-custom-reason').value = '';
   save();
-  toast('信已寄出 ✉️');
-  closeOv('ov-letter');
-  // add notification to chat
-  addMessage({ id:uid(), ts:Date.now(), side:'sent', type:'letter-notify', text:'✉️ 我寄出了一封信，点击查看', letterId:letter.id, quoteText:null });
+  document.getElementById('energy-dot').classList.remove('on');
+  closeOv('ov-proposal-respond');
+  renderSharedTab(); toast('梦角否定了提议');
 });
 
-function checkPendingLetters() {
-  S.letters.forEach(l => {
-    if (l.type === 'outbox' && !l.replied && Date.now() >= l.replyAt) {
-      // generate reply
-      const count = 10 + Math.floor(Math.random() * 11); // 10-20
-      const cards = [];
-      if (S.flashcards.length > 0) {
-        for (let i = 0; i < count; i++) {
-          cards.push(S.flashcards[Math.floor(Math.random() * S.flashcards.length)]);
-        }
-      } else {
-        cards.push('（梦角还没有字卡，请先添加字卡）');
-      }
-      const reply = {
-        id: uid(), ts: Date.now(), type: 'inbox',
-        content: cards.join('\n\n'),
-        fromLetterId: l.id
-      };
-      l.replied = true;
-      S.letters.push(reply);
-      save();
-      addMessage({ id:uid(), ts:Date.now(), side:'recv', type:'letter-notify', text:`✉️ 梦角回信了，点击查看`, letterId:reply.id, quoteText:null });
-    }
+function renderSharedHistory() {
+  const container = document.getElementById('shared-history');
+  container.innerHTML = '';
+  if (!S.sharedHistory.length) { container.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:9px 0;">暂无历史记录</div>'; return; }
+  S.sharedHistory.slice(0, 20).forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'tl-item';
+    item.innerHTML = `<div class="tl-dot" style="${h.action==='否定'?'background:#f05050;':''}"></div><div class="tl-right"><div class="tl-val">${h.value} <span style="font-size:11px;font-weight:400;color:${h.action==='否定'?'#f05050':'var(--accent)'};">${h.action}</span></div>${h.reason&&h.reason!=='无'?`<div class="tl-meta">原因：${h.reason}</div>`:''}<div class="tl-meta">${new Date(h.ts).toLocaleString('zh-CN')}</div></div>`;
+    container.appendChild(item);
   });
 }
 
-function viewLetter(l) {
-  document.getElementById('lv-title').textContent = l.type === 'outbox' ? '我的信' : '梦角的回信';
-  document.getElementById('lv-meta').textContent = new Date(l.ts).toLocaleString('zh-CN');
-  document.getElementById('lv-body').textContent = l.content;
-  openOv('ov-ltr-view');
+// ═══════════════════════ STATUS PRESETS ═══════════════════════
+function renderStatusPresets() {
+  renderStatusList('my-st-list', S.statusOptions.me);
+  renderStatusList('pt-st-list', S.statusOptions.partner);
+  renderStatusList('rel-st-list', S.statusOptions.shared);
 }
-
-function viewLetterById(id, isReply) {
-  const l = S.letters.find(x => x.id === id);
-  if (l) viewLetter(l);
-}
-
-// ===================== CALL =====================
-document.getElementById('btn-call-start').addEventListener('click', () => {
-  // partner initiates call to me
-  document.getElementById('call-in-view').style.display = '';
-  document.getElementById('call-act-view').style.display = 'none';
-  document.getElementById('call-ov').classList.add('open');
-});
-
-document.getElementById('btn-c-dec').addEventListener('click', endCall);
-document.getElementById('btn-c-acc').addEventListener('click', () => {
-  document.getElementById('call-in-view').style.display = 'none';
-  document.getElementById('call-act-view').style.display = '';
-  callSec = 0;
-  clearInterval(callTimer);
-  callTimer = setInterval(() => {
-    callSec++;
-    const m = String(Math.floor(callSec/60)).padStart(2,'0');
-    const s = String(callSec%60).padStart(2,'0');
-    document.getElementById('c-timer').textContent = `${m}:${s}`;
-  }, 1000);
-});
-document.getElementById('btn-c-end').addEventListener('click', endCall);
-document.getElementById('btn-c-mute').addEventListener('click', function() {
-  this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5';
-});
-document.getElementById('btn-c-cam').addEventListener('click', function() {
-  this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5';
-});
-
-function endCall() {
-  clearInterval(callTimer);
-  document.getElementById('call-ov').classList.remove('open');
-}
-
-// ===================== SEARCH =====================
-document.getElementById('btn-do-srch').addEventListener('click', () => {
-  const q = document.getElementById('srch-in').value.trim().toLowerCase();
-  const date = document.getElementById('srch-date').value;
-  const results = document.getElementById('srch-results');
-  results.innerHTML = '';
-  const filtered = S.messages.filter(m => {
-    if (m.type !== 'text') return false;
-    const matchText = !q || m.text.toLowerCase().includes(q);
-    const matchDate = !date || new Date(m.ts).toISOString().startsWith(date);
-    return matchText && matchDate;
+function renderStatusList(id, arr) {
+  const list = document.getElementById(id); list.innerHTML = '';
+  arr.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);';
+    row.innerHTML = `<span style="font-size:13px;color:var(--text);">${opt}</span><button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;" data-i="${i}">✕</button>`;
+    row.querySelector('button').addEventListener('click', () => { arr.splice(i, 1); save(); renderStatusPresets(); });
+    list.appendChild(row);
   });
-  if (!filtered.length) { results.innerHTML = '<div class="empty"><i class="fas fa-search"></i>没有找到相关消息</div>'; return; }
-  filtered.forEach(m => {
-    const r = document.createElement('div');
-    r.className = 'sr';
-    const highlighted = q ? m.text.replace(new RegExp(q,'gi'), s => `<mark>${s}</mark>`) : m.text;
-    const who = m.side === 'sent' ? S.settings.myName : S.settings.partnerName;
-    r.innerHTML = `<div class="sr-txt">${highlighted}</div><div class="sr-meta">${who} · ${new Date(m.ts).toLocaleString('zh-CN')}</div>`;
-    r.addEventListener('click', () => {
-      closeOv('ov-search');
-      // scroll to message
-      setTimeout(() => {
-        const el = document.querySelector(`[data-id="${m.id}"]`);
-        if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
-      }, 300);
+  if (!arr.length) list.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:7px 0;">暂无预设</div>';
+}
+['my','pt','rel'].forEach(k => {
+  const key = k === 'my' ? 'me' : k === 'pt' ? 'partner' : 'shared';
+  document.getElementById(`btn-add-${k}-st`).addEventListener('click', () => {
+    const inp = document.getElementById(`new-${k}-st`);
+    const v = inp.value.trim(); if (!v) return;
+    S.statusOptions[key].push(v); inp.value = ''; save(); renderStatusPresets();
+  });
+});
+
+// ═══════════════════════ WORDCARDS ═══════════════════════
+let currentGroupId = null;
+
+function renderGroupList() {
+  const list = document.getElementById('group-list'); list.innerHTML = '';
+  S.wordcards.groups.forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'group-item';
+    const activeCards = g.cards.filter(c => !c.disabled).length;
+    item.innerHTML = `
+      <div class="gi-left">
+        <div class="gi-name">${g.name}${g.builtin ? ' <span style="font-size:10px;color:var(--text2);">(内置)</span>':''}</div>
+        <div class="gi-count">${g.cards.length} 张字卡，${activeCards} 张启用</div>
+      </div>
+      <div class="gi-right">
+        ${!g.builtin ? `<button class="icon-btn" data-del-group="${g.id}" title="删除分组"><i class="fas fa-trash"></i></button>` : ''}
+        <i class="fas fa-chevron-right" style="color:var(--text2);font-size:12px;"></i>
+      </div>`;
+    item.addEventListener('click', e => {
+      if (e.target.closest('[data-del-group]')) return;
+      openGroupEdit(g.id);
     });
-    results.appendChild(r);
+    const delBtn = item.querySelector('[data-del-group]');
+    if (delBtn) {
+      delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const msg = g.cards.length
+          ? `该分组下有 ${g.cards.length} 个字卡，删除分组会同时删除这些字卡，是否继续？`
+          : '确认删除该分组？';
+        confirm2(msg, () => {
+          S.wordcards.groups = S.wordcards.groups.filter(x => x.id !== g.id);
+          save(); renderGroupList();
+        });
+      });
+    }
+    list.appendChild(item);
+  });
+}
+
+function openGroupEdit(groupId) {
+  currentGroupId = groupId;
+  const g = S.wordcards.groups.find(x => x.id === groupId); if (!g) return;
+  document.getElementById('group-edit-title').textContent = g.name;
+  document.getElementById('new-card-in').value = '';
+  renderCardList();
+  closeOv('ov-wordcards');
+  openOv('ov-group-edit');
+}
+document.getElementById('back-group').addEventListener('click', () => {
+  closeOv('ov-group-edit'); openOv('ov-wordcards');
+});
+
+function renderCardList() {
+  const g = S.wordcards.groups.find(x => x.id === currentGroupId); if (!g) return;
+  const list = document.getElementById('card-list'); list.innerHTML = '';
+  document.getElementById('group-card-count').textContent = `共 ${g.cards.length} 张，${g.cards.filter(c=>!c.disabled).length} 张启用`;
+  if (!g.cards.length) { list.innerHTML = '<div class="empty"><i class="fas fa-layer-group"></i>暂无字卡</div>'; return; }
+  g.cards.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'card-item';
+    row.innerHTML = `
+      <div class="card-txt${c.disabled ? ' dis' : ''}">${c.text}</div>
+      <div class="card-acts">
+        <button class="icon-btn" title="${c.disabled ? '启用' : '禁用'}"><i class="fas fa-${c.disabled ? 'eye' : 'eye-slash'}"></i></button>
+        <button class="icon-btn red-hover" title="删除"><i class="fas fa-trash"></i></button>
+      </div>`;
+    const btns = row.querySelectorAll('.icon-btn');
+    btns[0].addEventListener('click', () => { c.disabled = !c.disabled; save(); renderCardList(); });
+    btns[1].addEventListener('click', () => { g.cards.splice(i, 1); save(); renderCardList(); renderGroupList(); });
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('btn-add-card').addEventListener('click', () => {
+  const v = document.getElementById('new-card-in').value.trim(); if (!v) return;
+  const g = S.wordcards.groups.find(x => x.id === currentGroupId); if (!g) return;
+  g.cards.push({ id: uid(), text: v, disabled: false });
+  save(); renderCardList(); renderGroupList();
+  document.getElementById('new-card-in').value = '';
+});
+
+document.getElementById('btn-add-group').addEventListener('click', () => {
+  const name = document.getElementById('new-group-in').value.trim(); if (!name) return;
+  S.wordcards.groups.push({ id: uid(), name, builtin: false, cards: [] });
+  save(); renderGroupList();
+  document.getElementById('new-group-in').value = '';
+});
+
+// import/export
+document.getElementById('btn-wc-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(S.wordcards, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'wordcards.json'; a.click();
+});
+document.getElementById('btn-wc-import').addEventListener('click', () => document.getElementById('fi-wc-import').click());
+document.getElementById('fi-wc-import').addEventListener('change', function() {
+  const f = this.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.groups) { S.wordcards = data; save(); renderGroupList(); toast('导入成功'); }
+      else toast('格式错误');
+    } catch { toast('导入失败'); }
+  };
+  r.readAsText(f); this.value = '';
+});
+
+// ═══════════════════════ KAOMOJI MGR ═══════════════════════
+function renderKaomojiList() {
+  const list = document.getElementById('km-custom-list'); list.innerHTML = '';
+  if (!S.customKaomoji.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:7px 0;">暂无自定义颜文字</div>'; return; }
+  S.customKaomoji.forEach((k, i) => {
+    const row = document.createElement('div');
+    row.className = 'km-list-item';
+    row.innerHTML = `<div class="km-txt">${k}</div><button class="icon-btn"><i class="fas fa-trash"></i></button>`;
+    row.querySelector('button').addEventListener('click', () => { S.customKaomoji.splice(i, 1); save(); renderKaomojiList(); });
+    list.appendChild(row);
+  });
+}
+document.getElementById('btn-add-km').addEventListener('click', () => {
+  const v = document.getElementById('new-km-in').value.trim(); if (!v) return;
+  S.customKaomoji.push(v); save(); renderKaomojiList();
+  document.getElementById('new-km-in').value = '';
+});
+
+// ═══════════════════════ STICKER MGR ═══════════════════════
+function renderStickerMgr() {
+  const grid = document.getElementById('stk-mgr-grid');
+  const placeholder = document.getElementById('stk-add-placeholder');
+  grid.innerHTML = ''; grid.appendChild(placeholder);
+  S.stickers.forEach((stk, i) => {
+    const item = document.createElement('div');
+    item.className = 'stk-item';
+    item.innerHTML = `<img src="${stk.src}" alt=""><button class="stk-del">✕</button>`;
+    item.querySelector('button').addEventListener('click', () => {
+      S.stickers.splice(i, 1); save(); renderStickerMgr();
+    });
+    grid.insertBefore(item, placeholder);
+  });
+}
+document.getElementById('btn-add-sticker').addEventListener('click', () => document.getElementById('fi-sticker').click());
+document.getElementById('stk-add-placeholder').addEventListener('click', () => document.getElementById('fi-sticker').click());
+document.getElementById('fi-sticker').addEventListener('change', function() {
+  Array.from(this.files).forEach(f => {
+    const r = new FileReader();
+    r.onload = e => { S.stickers.push({ id: uid(), src: e.target.result }); save(); renderStickerMgr(); };
+    r.readAsDataURL(f);
+  }); this.value = '';
+});
+
+// ═══════════════════════ APPEARANCE ═══════════════════════
+document.getElementById('accent-row').addEventListener('click', e => {
+  const dot = e.target.closest('.c-dot'); if (!dot) return;
+  document.querySelectorAll('.c-dot').forEach(d => d.classList.remove('on'));
+  dot.classList.add('on');
+  S.settings.accent = dot.dataset.c; save(); applySettings();
+});
+document.getElementById('btn-wall').addEventListener('click', () => document.getElementById('fi-wall').click());
+document.getElementById('fi-wall').addEventListener('change', function() {
+  const f = this.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => { S.settings.wallpaper = e.target.result; save(); applySettings(); };
+  r.readAsDataURL(f); this.value = '';
+});
+document.getElementById('btn-wall-clr').addEventListener('click', () => { S.settings.wallpaper = null; save(); applySettings(); });
+document.getElementById('wall-op').addEventListener('input', function() {
+  S.settings.wallOpacity = +this.value;
+  document.getElementById('wall-op-v').textContent = this.value + '%';
+  save(); applySettings();
+});
+document.getElementById('fs-sl').addEventListener('input', function() {
+  S.settings.fontSize = +this.value;
+  document.getElementById('fs-v').textContent = this.value + 'px';
+  save(); applySettings();
+});
+document.getElementById('apply-bbl-css').addEventListener('click', () => {
+  S.settings.bubbleCSS = document.getElementById('bbl-css-in').value;
+  save(); applySettings(); toast('CSS 已应用');
+});
+document.getElementById('reset-bbl-css').addEventListener('click', () => {
+  S.settings.bubbleCSS = '';
+  document.getElementById('bbl-css-in').value = '';
+  save(); applySettings(); toast('已重置');
+});
+
+// ═══════════════════════ CHAT SETTINGS ═══════════════════════
+document.getElementById('tog-autosend').addEventListener('click', function() {
+  this.classList.toggle('on');
+  S.settings.autoSend.enabled = this.classList.contains('on');
+  save(); scheduleAutoSend();
+});
+document.getElementById('as-min-sl').addEventListener('input', function() {
+  S.settings.autoSend.minMin = +this.value;
+  document.getElementById('as-min-v').textContent = this.value + '分钟';
+  save(); scheduleAutoSend();
+});
+document.getElementById('as-max-sl').addEventListener('input', function() {
+  S.settings.autoSend.maxMin = +this.value;
+  document.getElementById('as-max-v').textContent = this.value + '分钟';
+  save();
+});
+document.getElementById('rd-min-sl').addEventListener('input', function() {
+  S.settings.replyDelay.minSec = +this.value;
+  document.getElementById('rd-min-v').textContent = this.value + '秒';
+  save();
+});
+document.getElementById('rd-max-sl').addEventListener('input', function() {
+  S.settings.replyDelay.maxSec = +this.value;
+  document.getElementById('rd-max-v').textContent = this.value + '秒';
+  save();
+});
+['sound','typing','quote'].forEach(k => {
+  document.getElementById(`tog-${k}`).addEventListener('click', function() {
+    this.classList.toggle('on');
+    const key = k === 'quote' ? 'quoteEnabled' : k;
+    S.settings[key] = this.classList.contains('on');
+    save();
   });
 });
 
-// ===================== AVATAR / NAME EDITING =====================
+// ═══════════════════════ AVATAR / NAME ═══════════════════════
 let avPopTarget = null;
-function showAvPop(target, anchorEl) {
+function showAvPop(target, anchor) {
   avPopTarget = target;
   const pop = document.getElementById('av-pop');
-  const rect = anchorEl.getBoundingClientRect();
+  const rect = anchor.getBoundingClientRect();
   pop.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
   pop.style.top = (rect.bottom + 6) + 'px';
   pop.classList.add('open');
 }
-
-document.getElementById('partner-ui').addEventListener('click', (e) => {
-  showAvPop('partner', document.getElementById('partner-av'));
-  e.stopPropagation();
-});
-document.getElementById('my-ui').addEventListener('click', (e) => {
-  showAvPop('me', document.getElementById('my-av'));
-  e.stopPropagation();
-});
-
-document.getElementById('ap-photo').addEventListener('click', () => {
-  closeAvPop();
-  document.getElementById('fi-av').click();
-});
+document.getElementById('partner-ui').addEventListener('click', e => { showAvPop('partner', document.getElementById('partner-av')); e.stopPropagation(); });
+document.getElementById('my-ui').addEventListener('click', e => { showAvPop('me', document.getElementById('my-av')); e.stopPropagation(); });
+document.getElementById('ap-photo').addEventListener('click', () => { closeAvPop(); document.getElementById('fi-av').click(); });
 document.getElementById('ap-name').addEventListener('click', () => {
   closeAvPop();
   const isPartner = avPopTarget === 'partner';
   openEditModal(isPartner ? '修改梦角的名字' : '修改我的名字',
     isPartner ? S.settings.partnerName : S.settings.myName,
     val => {
-      if (isPartner) { S.settings.partnerName = val; document.getElementById('partner-nm').textContent = val; }
-      else { S.settings.myName = val; document.getElementById('my-nm').textContent = val; }
-      save();
+      if (isPartner) S.settings.partnerName = val;
+      else S.settings.myName = val;
+      save(); applySettings();
     });
 });
-document.getElementById('ap-status').addEventListener('click', () => {
-  closeAvPop();
-  const isPartner = avPopTarget === 'partner';
-  openEditModal(isPartner ? '修改梦角的状态' : '修改我的状态',
-    isPartner ? S.settings.partnerStatus : S.settings.myStatus,
-    val => {
-      if (isPartner) { S.settings.partnerStatus = val; document.getElementById('partner-st').textContent = val; }
-      else { S.settings.myStatus = val; document.getElementById('my-st').textContent = val; }
-      save();
-    });
-});
-
-function closeAvPop() {
-  document.getElementById('av-pop').classList.remove('open');
-}
-
+function closeAvPop() { document.getElementById('av-pop').classList.remove('open'); }
 document.getElementById('fi-av').addEventListener('change', function() {
   const f = this.files[0]; if (!f) return;
   const r = new FileReader();
   r.onload = e => {
-    const src = e.target.result;
-    if (avPopTarget === 'partner') { S.settings.partnerAvatar = src; }
-    else { S.settings.myAvatar = src; }
-    applySettings(); save();
+    if (avPopTarget === 'partner') S.settings.partnerAvatar = e.target.result;
+    else S.settings.myAvatar = e.target.result;
+    save(); applySettings();
   };
-  r.readAsDataURL(f);
-  this.value = '';
+  r.readAsDataURL(f); this.value = '';
 });
 
-function openEditModal(title, value, callback) {
+// ═══════════════════════ EDIT MODAL ═══════════════════════
+function openEditModal(title, value, cb) {
   document.getElementById('edit-ttl').textContent = title;
   document.getElementById('edit-in').value = value;
-  editCallback = callback;
+  editCallback = cb;
   openOv('ov-edit');
-  setTimeout(() => document.getElementById('edit-in').focus(), 100);
+  setTimeout(() => document.getElementById('edit-in').focus(), 120);
 }
-
 document.getElementById('btn-save-edit').addEventListener('click', () => {
-  const v = document.getElementById('edit-in').value.trim();
-  if (!v) return;
-  if (editCallback) editCallback(v);
-  editCallback = null;
+  const v = document.getElementById('edit-in').value.trim(); if (!v) return;
+  if (editCallback) { editCallback(v); editCallback = null; }
   closeOv('ov-edit');
 });
-document.getElementById('edit-in').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('btn-save-edit').click();
-});
+document.getElementById('edit-in').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-save-edit').click(); });
 
-// ===================== SETTINGS PANELS =====================
-// theme
-document.getElementById('th-light').addEventListener('click', () => {
-  S.settings.theme = 'light'; save(); applySettings();
+// ═══════════════════════ CONFIRM DIALOG ═══════════════════════
+let confirmCb = null;
+function confirm2(msg, cb) {
+  document.getElementById('confirm-msg').textContent = msg;
+  confirmCb = cb;
+  openOv('ov-confirm');
+}
+document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+  if (confirmCb) { confirmCb(); confirmCb = null; }
+  closeOv('ov-confirm');
 });
-document.getElementById('th-dark').addEventListener('click', () => {
-  S.settings.theme = 'dark'; save(); applySettings();
-});
-// accent
-document.getElementById('accent-row').addEventListener('click', e => {
-  const dot = e.target.closest('.c-dot');
-  if (!dot) return;
-  document.querySelectorAll('.c-dot').forEach(d => d.classList.remove('on'));
-  dot.classList.add('on');
-  S.settings.accent = dot.dataset.c;
-  save(); applySettings();
-});
-// wallpaper
-document.getElementById('btn-wall').addEventListener('click', () => document.getElementById('fi-wall').click());
-document.getElementById('fi-wall').addEventListener('change', function() {
-  const f = this.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = e => { S.settings.wallpaper = e.target.result; save(); applySettings(); };
-  r.readAsDataURL(f);
-  this.value = '';
-});
-document.getElementById('btn-wall-clr').addEventListener('click', () => {
-  S.settings.wallpaper = null; save(); applySettings();
-});
-document.getElementById('wall-op').addEventListener('input', function() {
-  S.settings.wallOpacity = +this.value;
-  document.getElementById('wall-op-v').textContent = this.value + '%';
-  save(); applySettings();
-});
-// font size
-document.getElementById('fs-sl').addEventListener('input', function() {
-  S.settings.fontSize = +this.value;
-  document.getElementById('fs-v').textContent = this.value + 'px';
-  save(); applySettings();
-});
-// bubble css
-document.getElementById('apply-bbl-css').addEventListener('click', () => {
-  S.settings.bubbleCSS = document.getElementById('bbl-css').value;
-  save(); applySettings(); toast('CSS 已应用');
-});
-// reply speed
-document.getElementById('rmin-sl').addEventListener('input', function() {
-  S.settings.replyMin = +this.value;
-  document.getElementById('rmin-v').textContent = this.value + 's';
-  save();
-});
-document.getElementById('rmax-sl').addEventListener('input', function() {
-  S.settings.replyMax = +this.value;
-  document.getElementById('rmax-v').textContent = this.value + 's';
-  save();
-});
-// toggles
-['quote','sound','typing'].forEach(k => {
-  document.getElementById(`tog-${k}`).addEventListener('click', function() {
-    this.classList.toggle('on');
-    S.settings[k === 'quote' ? 'quoteEnabled' : k] = this.classList.contains('on');
-    save();
-  });
-});
+document.getElementById('btn-confirm-no').addEventListener('click', () => { confirmCb = null; closeOv('ov-confirm'); });
 
-// ===================== CONTEXT MENU =====================
+// ═══════════════════════ CONTEXT MENU ═══════════════════════
 document.getElementById('cx-quote').addEventListener('click', () => {
-  if (!ctxTarget || !S.settings.quoteEnabled) return;
-  setReply(ctxTarget);
-  document.getElementById('msg-in').focus();
+  if (ctxTarget && S.settings.quoteEnabled) { setReply(ctxTarget); document.getElementById('msg-in').focus(); }
   closeCtx();
 });
 document.getElementById('cx-copy').addEventListener('click', () => {
@@ -1083,84 +1156,64 @@ document.getElementById('cx-del').addEventListener('click', () => {
   if (i >= 0) { S.messages.splice(i, 1); save(); renderMessages(); }
   closeCtx();
 });
-function closeCtx() {
-  document.getElementById('ctx').classList.remove('open');
-  ctxTarget = null;
-}
+function closeCtx() { document.getElementById('ctx').classList.remove('open'); ctxTarget = null; }
 
-// ===================== MODAL ROUTING =====================
-document.querySelectorAll('[data-close]').forEach(el => {
-  el.addEventListener('click', () => closeOv(el.dataset.close));
+// ═══════════════════════ VIDEO CALL ═══════════════════════
+let callTimer = null, callSec = 0;
+document.getElementById('pm-video').addEventListener('click', () => {
+  closePlusMenu();
+  document.getElementById('call-in-view').style.display = '';
+  document.getElementById('call-act-view').style.display = 'none';
+  document.getElementById('call-ov').classList.add('open');
 });
-document.querySelectorAll('[data-open]').forEach(el => {
-  el.addEventListener('click', () => openOv(el.dataset.open));
+document.getElementById('btn-c-dec').addEventListener('click', endCall);
+document.getElementById('btn-c-acc').addEventListener('click', () => {
+  document.getElementById('call-in-view').style.display = 'none';
+  document.getElementById('call-act-view').style.display = '';
+  callSec = 0; clearInterval(callTimer);
+  callTimer = setInterval(() => {
+    callSec++;
+    const m = String(Math.floor(callSec/60)).padStart(2,'0'), s = String(callSec%60).padStart(2,'0');
+    document.getElementById('c-timer').textContent = `${m}:${s}`;
+  }, 1000);
 });
-document.querySelectorAll('[data-back]').forEach(el => {
-  el.addEventListener('click', () => {
-    closeAll();
-    openOv(el.dataset.back);
-  });
-});
-document.querySelectorAll('.ov').forEach(ov => {
-  ov.addEventListener('click', e => {
-    if (e.target === ov) closeOv(ov.id);
-  });
-});
+document.getElementById('btn-c-end').addEventListener('click', endCall);
+document.getElementById('btn-c-mute').addEventListener('click', function() { this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5'; });
+document.getElementById('btn-c-cam').addEventListener('click', function() { this.style.opacity = this.style.opacity === '0.5' ? '1' : '0.5'; });
+function endCall() { clearInterval(callTimer); document.getElementById('call-ov').classList.remove('open'); }
 
-// Letter tabs
-document.querySelectorAll('.ltab').forEach(t => {
-  t.addEventListener('click', () => switchLetterTab(t.dataset.ltab));
-});
+// ═══════════════════════ MODAL ROUTING ═══════════════════════
+document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => closeOv(el.dataset.close)));
+document.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => openOv(el.dataset.open)));
+document.querySelectorAll('[data-back]').forEach(el => el.addEventListener('click', () => { closeAll(); openOv(el.dataset.back); }));
+document.querySelectorAll('.ov').forEach(ov => ov.addEventListener('click', e => { if (e.target === ov) closeOv(ov.id); }));
 
-// Note sender buttons
-document.querySelectorAll('[data-s]').forEach(el => {
-  el.addEventListener('click', () => {
-    noteSender = el.dataset.s;
-    document.getElementById('nsb-me').classList.toggle('on', noteSender === 'me');
-    document.getElementById('nsb-pt').classList.toggle('on', noteSender === 'partner');
-  });
-});
-
-// ===================== HEADER BUTTONS =====================
+// Header buttons
 document.getElementById('btn-settings').addEventListener('click', () => openOv('ov-settings'));
-document.getElementById('btn-energy').addEventListener('click', openEnergyModal);
-document.getElementById('btn-letter').addEventListener('click', openLetterModal);
-document.getElementById('btn-search').addEventListener('click', () => {
-  document.getElementById('srch-in').value = '';
-  document.getElementById('srch-date').value = '';
-  document.getElementById('srch-results').innerHTML = '';
-  openOv('ov-search');
-});
-document.getElementById('btn-note').addEventListener('click', openNoteModal);
+document.getElementById('btn-energy').addEventListener('click', () => { document.getElementById('energy-dot').classList.remove('on'); openEnergyModal(); });
+document.getElementById('btn-plus').addEventListener('click', togglePlusMenu);
 document.getElementById('btn-emoji-tog').addEventListener('click', toggleEmojiPanel);
+document.getElementById('pm-note').addEventListener('click', () => { closePlusMenu(); openNoteModal(); });
 
-// ===================== SEND MESSAGE =====================
-document.getElementById('send-btn').addEventListener('click', doSend);
-document.getElementById('msg-in').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    doSend();
-  }
+// Envelope mgr from settings
+document.querySelectorAll('[data-open="ov-envelope-mgr"]').forEach(el => {
+  el.addEventListener('click', () => { switchEnvTab('write'); });
 });
+
+// Send
+document.getElementById('send-btn').addEventListener('click', doSend);
+document.getElementById('msg-in').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); } });
 document.getElementById('msg-in').addEventListener('input', function() {
   this.style.height = 'auto';
-  this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+  this.style.height = Math.min(this.scrollHeight, 88) + 'px';
 });
 
-function doSend() {
-  const inp = document.getElementById('msg-in');
-  const text = inp.value.trim();
-  if (!text) return;
-  closeEmojiPanel();
-  sendMsg(text, {
-    quoteText: replyTarget?.text || null,
-    quoteId: replyTarget?.id || null
-  });
-  inp.value = '';
-  inp.style.height = 'auto';
-}
+// Envelope tab switching
+document.getElementById('ov-envelope-mgr').addEventListener('click', e => {
+  const t = e.target.closest('.etab'); if (t) switchEnvTab(t.dataset.etab);
+});
 
-// ===================== GLOBAL CLICKS =====================
+// Global click close
 document.addEventListener('click', e => {
   if (!document.getElementById('ctx').contains(e.target)) closeCtx();
   if (!document.getElementById('av-pop').contains(e.target) &&
@@ -1168,42 +1221,64 @@ document.addEventListener('click', e => {
       !document.getElementById('my-ui').contains(e.target)) closeAvPop();
   if (!document.getElementById('emoji-panel').contains(e.target) &&
       !document.getElementById('btn-emoji-tog').contains(e.target)) closeEmojiPanel();
+  if (!document.getElementById('plus-menu').contains(e.target) &&
+      !document.getElementById('btn-plus').contains(e.target)) closePlusMenu();
 });
 
-// ===================== INIT =====================
+// ═══════════════════════ INIT ═══════════════════════
 async function init() {
   await load();
   applySettings();
   buildEmojiPanel();
 
-  // sync settings sliders
+  // sync sliders
   const s = S.settings;
   document.getElementById('fs-sl').value = s.fontSize;
   document.getElementById('fs-v').textContent = s.fontSize + 'px';
   document.getElementById('wall-op').value = s.wallOpacity;
   document.getElementById('wall-op-v').textContent = s.wallOpacity + '%';
-  document.getElementById('rmin-sl').value = s.replyMin;
-  document.getElementById('rmin-v').textContent = s.replyMin + 's';
-  document.getElementById('rmax-sl').value = s.replyMax;
-  document.getElementById('rmax-v').textContent = s.replyMax + 's';
-  document.getElementById('tog-quote').classList.toggle('on', s.quoteEnabled);
+  document.getElementById('as-min-sl').value = s.autoSend.minMin;
+  document.getElementById('as-min-v').textContent = s.autoSend.minMin + '分钟';
+  document.getElementById('as-max-sl').value = s.autoSend.maxMin;
+  document.getElementById('as-max-v').textContent = s.autoSend.maxMin + '分钟';
+  document.getElementById('rd-min-sl').value = s.replyDelay.minSec;
+  document.getElementById('rd-min-v').textContent = s.replyDelay.minSec + '秒';
+  document.getElementById('rd-max-sl').value = s.replyDelay.maxSec;
+  document.getElementById('rd-max-v').textContent = s.replyDelay.maxSec + '秒';
+
+  // sync toggles
+  document.getElementById('tog-autosend').classList.toggle('on', s.autoSend.enabled);
   document.getElementById('tog-sound').classList.toggle('on', s.sound);
   document.getElementById('tog-typing').classList.toggle('on', s.typing);
-  document.getElementById('bbl-css').value = s.bubbleCSS || '';
+  document.getElementById('tog-quote').classList.toggle('on', s.quoteEnabled);
 
-  // accent dot
+  // sync accent dots
   document.querySelectorAll('.c-dot').forEach(d => d.classList.toggle('on', d.dataset.c === s.accent));
 
-  renderMessages();
-  renderCards();
-  renderNoteOpts();
-  renderEnergyOpts();
-  renderStickerMgr();
-  renderAnniv();
-  checkPendingLetters();
+  // sync bubble css
+  document.getElementById('bbl-css-in').value = s.bubbleCSS || '';
 
-  // check letters every 5 min
-  setInterval(checkPendingLetters, 5 * 60 * 1000);
+  renderMessages();
+  renderGroupList();
+  renderNotesList();
+  updateNotesBadge();
+  renderStatusPresets();
+  renderKaomojiList();
+  renderStickerMgr();
+
+  // check pending envelope replies every 5 min
+  checkAndRenderEnvReceived();
+  setInterval(() => {
+    S.envelopes.forEach(env => {
+      if (!env.replied && Date.now() >= env.replyAt) checkAndRenderEnvReceived();
+    });
+  }, 5 * 60 * 1000);
+
+  // auto send
+  scheduleAutoSend();
+
+  // proposal dot
+  if (S.sharedProposal) document.getElementById('energy-dot').classList.add('on');
 }
 
 init();

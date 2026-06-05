@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>梦角</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,299 +16,363 @@
 html,body{height:100%;overflow:hidden;font-family:'Noto Serif SC',serif;}
 :root{
   --accent:#c5a47e;--accent-rgb:197,164,126;
-  --bg:#f5f5f5;--surface:#fff;--surface2:#f9f9f9;
-  --text:#1a1a1a;--text2:#7a7a7a;--border:#ebebeb;
+  --bg:#f7f4ef;--surface:#fff;--surface2:#f2ede6;--surface3:#ede6dc;
+  --text:#1a1a1a;--text2:#8a8078;--border:#e8e0d4;
   --sent-bg:var(--accent);--sent-text:#fff;
-  --recv-bg:#f0f0f0;--recv-text:#1a1a1a;
-  --radius:18px;--font:'Noto Serif SC',serif;--font-size:15px;
+  --recv-bg:#fff;--recv-text:#1a1a1a;
+  --radius:18px;--font:'Noto Serif SC',serif;--font-size:16px;
   --shadow:0 4px 20px rgba(0,0,0,0.08);
-  --tr:all 0.25s cubic-bezier(0.25,0.8,0.25,1);
+  --tr:all 0.22s cubic-bezier(0.25,0.8,0.25,1);
 }
-[data-theme="dark"]{
-  --bg:#1a1a1a;--surface:#252525;--surface2:#2e2e2e;
-  --text:#f0f0f0;--text2:#888;--border:#3a3a3a;
-  --recv-bg:#333;--recv-text:#f0f0f0;
-}
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg);max-width:480px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,0.1);}
-/* HEADER */
-#header{height:64px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;flex-shrink:0;z-index:100;}
-.hd-user{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-width:64px;}
-.hd-avatar{width:38px;height:38px;border-radius:50%;background:rgba(var(--accent-rgb),0.18);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:14px;color:var(--accent);border:2px solid rgba(var(--accent-rgb),0.28);flex-shrink:0;transition:var(--tr);}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg);max-width:480px;margin:0 auto;position:relative;overflow:hidden;}
+
+/* ── HEADER ── */
+#header{height:62px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 10px;flex-shrink:0;z-index:100;}
+.hd-user{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-width:68px;max-width:120px;padding:4px 2px;border-radius:10px;transition:var(--tr);}
+.hd-user:active{background:var(--surface2);}
+.hd-avatar{width:36px;height:36px;border-radius:50%;background:rgba(var(--accent-rgb),0.15);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:13px;color:var(--accent);border:2px solid rgba(var(--accent-rgb),0.25);flex-shrink:0;}
 .hd-avatar img{width:100%;height:100%;object-fit:cover;}
-.hd-avatar:active{transform:scale(0.88);}
-.hd-name{font-size:12px;font-weight:600;color:var(--text);max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.hd-status{font-size:10px;color:var(--text2);max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.hd-actions{display:flex;gap:4px;}
-.hd-btn{width:32px;height:32px;border:none;border-radius:50%;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:var(--tr);}
+.hd-name{font-size:11px;font-weight:600;color:var(--text);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hd-status{font-size:10px;color:var(--text2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;}
+.hd-center{display:flex;gap:2px;align-items:center;}
+.hd-btn{width:36px;height:36px;border:none;border-radius:50%;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:var(--tr);position:relative;}
 .hd-btn:hover{color:var(--accent);background:rgba(var(--accent-rgb),0.1);}
-/* CHAT */
-#chat-wrap{flex:1;overflow-y:auto;padding:10px 10px 6px;display:flex;flex-direction:column;gap:1px;position:relative;background:var(--bg);}
+.red-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#f05050;display:none;}
+.red-dot.on{display:block;}
+
+/* ── CHAT ── */
+#chat-wrap{flex:1;overflow-y:auto;padding:8px 10px 4px;display:flex;flex-direction:column;gap:1px;position:relative;background:var(--bg);}
 #chat-bg{position:absolute;inset:0;background-size:cover;background-position:center;pointer-events:none;z-index:0;}
 #chat-wrap>*{position:relative;z-index:1;}
-.date-div{align-self:center;font-size:11px;color:var(--text2);background:rgba(var(--accent-rgb),0.09);padding:2px 10px;border-radius:10px;margin:6px 0;}
-.msg-row{display:flex;align-items:flex-end;gap:7px;margin:2px 0;animation:msgIn 0.2s ease;}
+.date-div{align-self:center;font-size:10px;color:var(--text2);background:rgba(var(--accent-rgb),0.09);padding:2px 10px;border-radius:10px;margin:5px 0;}
+.msg-row{display:flex;align-items:flex-end;gap:6px;margin:2px 0;animation:msgIn 0.18s ease;}
 .msg-row.sent{flex-direction:row-reverse;}
-@keyframes msgIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-.msg-av{width:34px;height:34px;border-radius:50%;background:rgba(var(--accent-rgb),0.18);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--accent);cursor:pointer;user-select:none;}
+@keyframes msgIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.msg-av{width:32px;height:32px;border-radius:50%;background:rgba(var(--accent-rgb),0.15);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent);cursor:pointer;user-select:none;}
 .msg-av img{width:100%;height:100%;object-fit:cover;}
-.msg-body{display:flex;flex-direction:column;max-width:72%;gap:2px;}
+.msg-body{display:flex;flex-direction:column;max-width:74%;gap:2px;}
 .sent .msg-body{align-items:flex-end;}
 .recv .msg-body{align-items:flex-start;}
 .quote-bar{background:rgba(var(--accent-rgb),0.1);border-left:3px solid var(--accent);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px;}
 .msg-bbl{padding:8px 12px;border-radius:18px;font-size:var(--font-size);line-height:1.55;word-break:break-word;cursor:pointer;user-select:none;}
 .sent .msg-bbl{background:var(--sent-bg);color:var(--sent-text);border-radius:18px 4px 18px 18px;}
-.recv .msg-bbl{background:var(--recv-bg);color:var(--recv-text);border-radius:4px 18px 18px 18px;}
-.img-bbl{padding:4px!important;background:transparent!important;}
+.recv .msg-bbl{background:var(--recv-bg);color:var(--recv-text);border-radius:4px 18px 18px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
+.img-bbl{padding:4px!important;background:transparent!important;box-shadow:none!important;}
 .img-bbl img{max-width:200px;max-height:260px;border-radius:13px;display:block;}
-.note-bbl{background:linear-gradient(135deg,rgba(var(--accent-rgb),0.14),rgba(var(--accent-rgb),0.04));border:1.5px dashed rgba(var(--accent-rgb),0.4);border-radius:14px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:13px;color:var(--accent);}
-.letter-bbl{background:linear-gradient(135deg,#fdf8f2,#f5ead8);border:1px solid rgba(var(--accent-rgb),0.3);border-radius:14px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:13px;color:#8a6840;}
-[data-theme="dark"] .letter-bbl{background:linear-gradient(135deg,#2a2118,#211a0f);color:#c5a47e;}
-.poke-row{align-self:center;font-size:11px;color:var(--text2);background:rgba(var(--accent-rgb),0.08);padding:2px 12px;border-radius:10px;margin:3px 0;}
+.sys-row{align-self:center;font-size:11px;color:var(--text2);background:rgba(var(--accent-rgb),0.08);padding:3px 12px;border-radius:10px;margin:3px 0;cursor:pointer;}
+.sys-row:hover{background:rgba(var(--accent-rgb),0.15);}
+.poke-row{align-self:center;font-size:11px;color:var(--text2);background:rgba(var(--accent-rgb),0.06);padding:2px 12px;border-radius:10px;margin:2px 0;}
 .msg-time{font-size:10px;color:var(--text2);padding:0 2px;}
-/* TYPING */
-#typing-ind{display:none;align-items:center;gap:6px;padding:4px 8px;align-self:flex-start;}
+
+/* ── TYPING ── */
+#typing-ind{display:none;align-items:center;gap:5px;padding:3px 6px;align-self:flex-start;}
 #typing-ind.vis{display:flex;}
-.t-av{width:26px;height:26px;border-radius:50%;background:rgba(var(--accent-rgb),0.18);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);overflow:hidden;}
-.t-dots{display:flex;gap:3px;background:var(--recv-bg);padding:7px 11px;border-radius:14px;}
+.t-av{width:24px;height:24px;border-radius:50%;background:rgba(var(--accent-rgb),0.15);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);overflow:hidden;}
+.t-dots{display:flex;gap:3px;background:var(--recv-bg);padding:7px 10px;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
 .t-dot{width:5px;height:5px;border-radius:50%;background:var(--text2);animation:td 1.2s infinite;}
 .t-dot:nth-child(2){animation-delay:.2s;}.t-dot:nth-child(3){animation-delay:.4s;}
 @keyframes td{0%,60%,100%{opacity:.3;transform:scale(.8);}30%{opacity:1;transform:scale(1.1);}}
-/* INPUT */
-#input-wrap{background:var(--surface);border-top:1px solid var(--border);padding:7px 9px;padding-bottom:max(7px,env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:100;}
-#reply-prev{display:none;background:rgba(var(--accent-rgb),0.08);border-left:3px solid var(--accent);border-radius:6px;padding:4px 28px 4px 9px;margin-bottom:5px;font-size:12px;color:var(--text2);position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#rp-close{position:absolute;right:7px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:13px;color:var(--text2);}
-#input-row{display:flex;align-items:flex-end;gap:5px;}
-.i-btn{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:var(--tr);}
-.i-btn:hover,.i-btn:active{color:var(--accent);}
-#msg-in{flex:1;border:1.5px solid var(--border);border-radius:18px;padding:7px 13px;font-size:var(--font-size);font-family:var(--font);background:var(--surface2);color:var(--text);outline:none;resize:none;max-height:90px;overflow-y:auto;line-height:1.5;transition:border-color .2s;}
-#msg-in:focus{border-color:rgba(var(--accent-rgb),.5);}
-#send-btn{width:34px;height:34px;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:var(--tr);}
-#send-btn:active{transform:scale(.88);}
-/* EMOJI PANEL */
-#emoji-panel{display:none;background:var(--surface);border-top:1px solid var(--border);flex-direction:column;max-height:250px;}
+
+/* ── PLUS MENU ── */
+#plus-menu{display:none;background:var(--surface);border-top:1px solid var(--border);padding:10px;flex-shrink:0;}
+#plus-menu.open{display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap;}
+.pm-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 12px;border-radius:12px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:var(--tr);min-width:64px;}
+.pm-item:active{background:rgba(var(--accent-rgb),0.1);border-color:var(--accent);}
+.pm-item i{font-size:18px;color:var(--accent);}
+.pm-item span{font-size:11px;color:var(--text);white-space:nowrap;}
+
+/* ── EMOJI PANEL ── */
+#emoji-panel{display:none;background:var(--surface);border-top:1px solid var(--border);flex-direction:column;max-height:240px;flex-shrink:0;}
 #emoji-panel.open{display:flex;}
 .e-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;}
 .e-tab{padding:7px 14px;font-size:12px;border:none;background:none;cursor:pointer;color:var(--text2);white-space:nowrap;border-bottom:2px solid transparent;font-family:var(--font);}
 .e-tab.on{color:var(--accent);border-bottom-color:var(--accent);}
-.e-grid{display:flex;flex-wrap:wrap;padding:6px;gap:1px;overflow-y:auto;flex:1;}
+#e-content{display:flex;flex-wrap:wrap;padding:5px;gap:1px;overflow-y:auto;flex:1;}
 .e-item{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:21px;cursor:pointer;border-radius:7px;transition:background .12s;}
-.e-item:hover{background:rgba(var(--accent-rgb),.12);}
+.e-item:hover,.e-item:active{background:rgba(var(--accent-rgb),.12);}
 .km-item{font-size:12px;width:auto;padding:4px 8px;white-space:nowrap;}
-.stk-grid{display:flex;flex-wrap:wrap;padding:7px;gap:5px;overflow-y:auto;flex:1;}
-.stk-item{width:66px;height:66px;border-radius:11px;overflow:hidden;cursor:pointer;background:var(--surface2);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
-.stk-item img{width:100%;height:100%;object-fit:cover;}
-.stk-add{border:2px dashed var(--border);color:var(--text2);font-size:22px;}
-/* MODALS */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.stk-grid-ep{display:flex;flex-wrap:wrap;padding:5px;gap:5px;width:100%;}
+.stk-item-ep{width:64px;height:64px;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stk-item-ep img{width:100%;height:100%;object-fit:cover;}
+
+/* ── INPUT ── */
+#input-area{background:var(--surface);border-top:1px solid var(--border);padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom,0px));flex-shrink:0;z-index:100;}
+#reply-prev{display:none;background:rgba(var(--accent-rgb),0.08);border-left:3px solid var(--accent);border-radius:6px;padding:4px 28px 4px 9px;margin-bottom:5px;font-size:12px;color:var(--text2);position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#rp-close{position:absolute;right:7px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:13px;color:var(--text2);}
+#input-row{display:flex;align-items:flex-end;gap:4px;}
+.i-btn{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:var(--tr);}
+.i-btn:hover,.i-btn:active{color:var(--accent);}
+#msg-in{flex:1;border:1.5px solid var(--border);border-radius:18px;padding:7px 12px;font-size:var(--font-size);font-family:var(--font);background:var(--surface2);color:var(--text);outline:none;resize:none;max-height:88px;overflow-y:auto;line-height:1.5;transition:border-color .2s;}
+#msg-in:focus{border-color:rgba(var(--accent-rgb),.5);}
+#send-btn{width:34px;height:34px;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:var(--tr);}
+#send-btn:active{transform:scale(.88);}
+
+/* ── MODALS ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:500;display:none;align-items:flex-end;justify-content:center;}
 .ov.center{align-items:center;}
 .ov.open{display:flex;}
-.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:92vh;display:flex;flex-direction:column;animation:sUp .26s ease;}
-.ov.center .modal{border-radius:20px;max-width:360px;animation:zIn .2s ease;}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:92vh;display:flex;flex-direction:column;animation:sUp .24s ease;}
+.ov.center .modal{border-radius:18px;max-width:360px;animation:zIn .18s ease;}
 @keyframes sUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-@keyframes zIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
-.m-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 11px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.m-title{font-size:15px;font-weight:600;color:var(--text);}
-.m-close{width:26px;height:26px;border:none;border-radius:50%;background:var(--surface2);color:var(--text2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
-.m-body{padding:14px 18px;overflow-y:auto;flex:1;}
-.m-foot{padding:10px 18px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);display:flex;gap:9px;flex-shrink:0;}
-/* buttons */
+@keyframes zIn{from{opacity:0;transform:scale(.93);}to{opacity:1;transform:scale(1);}}
+.m-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;border-bottom:1px solid var(--border);flex-shrink:0;gap:8px;}
+.m-title{font-size:15px;font-weight:600;color:var(--text);flex:1;}
+.m-close{width:26px;height:26px;border:none;border-radius:50%;background:var(--surface2);color:var(--text2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.back-btn{width:26px;height:26px;border:none;background:none;font-size:22px;color:var(--text2);cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
+.m-body{padding:13px 18px;overflow-y:auto;flex:1;}
+.m-foot{padding:10px 18px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;}
+
+/* ── BUTTONS ── */
 .btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-family:var(--font);font-weight:500;transition:var(--tr);}
 .btn-p{background:var(--accent);color:#fff;}.btn-p:hover{opacity:.88;}
 .btn-g{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}.btn-g:hover{border-color:var(--accent);color:var(--accent);}
 .btn-sm{padding:5px 12px;font-size:12px;border-radius:7px;}
-.btn-d{background:rgba(255,80,80,.1);color:#ff5050;border:1px solid rgba(255,80,80,.2);}
-/* form */
-.fi{width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:var(--font);background:var(--surface2);color:var(--text);outline:none;transition:border-color .2s;}
+.btn-d{background:rgba(255,80,80,.1);color:#f05050;border:1px solid rgba(255,80,80,.2);}
+.flex1{flex:1;}
+
+/* ── FORMS ── */
+.fi{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:var(--font);background:var(--surface2);color:var(--text);outline:none;transition:border-color .2s;}
 .fi:focus{border-color:rgba(var(--accent-rgb),.5);}
-.fta{width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:var(--font);background:var(--surface2);color:var(--text);outline:none;resize:none;line-height:1.6;transition:border-color .2s;}
+.fta{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:var(--font);background:var(--surface2);color:var(--text);outline:none;resize:none;line-height:1.6;transition:border-color .2s;}
 .fta:focus{border-color:rgba(var(--accent-rgb),.5);}
 .flb{font-size:11px;color:var(--text2);margin-bottom:4px;display:block;}
 .fg{margin-bottom:13px;}
-/* toggle */
+.sec{font-size:10px;color:var(--text2);letter-spacing:.4px;margin-bottom:6px;margin-top:2px;text-transform:uppercase;}
+.dv{height:1px;background:var(--border);margin:11px 0;}
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}
+
+/* ── TOGGLES ── */
 .tog-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
 .tog-row:last-child{border-bottom:none;}
 .tog-lbl{font-size:13px;color:var(--text);}
 .tog-sub{font-size:11px;color:var(--text2);margin-top:1px;}
-.tog{width:42px;height:23px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;transition:background .22s;flex-shrink:0;}
+.tog{width:42px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;transition:background .22s;flex-shrink:0;}
 .tog.on{background:var(--accent);}
-.tog::after{content:'';position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .22s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
-.tog.on::after{left:22px;}
-/* settings grid */
+.tog::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .22s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.tog.on::after{left:21px;}
+
+/* ── SETTINGS GRID ── */
 .sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:2px 0;}
 .sc{background:var(--surface2);border:1px solid var(--border);border-radius:13px;padding:15px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:var(--tr);}
 .sc:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),.04);}
 .sc i{font-size:20px;color:var(--accent);}.sc span{font-size:12px;color:var(--text);font-weight:500;}
-/* sec */
-.sec{font-size:11px;color:var(--text2);letter-spacing:.5px;margin-bottom:7px;margin-top:3px;}
-/* slider */
+
+/* ── SLIDER ── */
 .sl-row{display:flex;align-items:center;gap:9px;margin:5px 0;}
-.sl-row label{font-size:11px;color:var(--text2);width:50px;flex-shrink:0;}
+.sl-row label{font-size:11px;color:var(--text2);width:55px;flex-shrink:0;}
 .sl-row input[type=range]{flex:1;accent-color:var(--accent);}
-.sl-row span{font-size:11px;color:var(--accent);width:32px;text-align:right;flex-shrink:0;}
-/* color dots */
+.sl-row span{font-size:11px;color:var(--accent);width:40px;text-align:right;flex-shrink:0;}
+
+/* ── COLOR DOTS ── */
 .c-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px;}
 .c-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .2s;}
 .c-dot.on{border-color:var(--text);}
-/* tags */
-.tw{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;}
-.tag{padding:5px 11px;border-radius:18px;background:var(--surface2);border:1px solid var(--border);font-size:12px;color:var(--text);cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:3px;}
+
+/* ── TAGS ── */
+.tw{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.tag{padding:5px 11px;border-radius:18px;background:var(--surface2);border:1.5px solid var(--border);font-size:12px;color:var(--text);cursor:pointer;transition:var(--tr);}
 .tag.sel{background:rgba(var(--accent-rgb),.14);border-color:var(--accent);color:var(--accent);}
-/* divider */
-.dv{height:1px;background:var(--border);margin:11px 0;}
-/* context menu */
+.note-sb{display:inline-flex;align-items:center;padding:5px 13px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);transition:var(--tr);}
+.note-sb.on{background:rgba(var(--accent-rgb),.13);border-color:var(--accent);color:var(--accent);}
+
+/* ── WORDCARDS ── */
+.group-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;gap:8px;}
+.group-item:last-child{border-bottom:none;}
+.gi-left{display:flex;flex-direction:column;gap:2px;}
+.gi-name{font-size:13px;color:var(--text);font-weight:500;}
+.gi-count{font-size:11px;color:var(--text2);}
+.gi-right{display:flex;gap:4px;align-items:center;}
+.card-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.card-item:last-child{border-bottom:none;}
+.card-txt{flex:1;font-size:13px;color:var(--text);line-height:1.5;word-break:break-word;}
+.card-txt.dis{color:var(--text2);text-decoration:line-through;}
+.card-acts{display:flex;gap:3px;flex-shrink:0;}
+.icon-btn{width:26px;height:26px;border:none;border-radius:6px;background:none;color:var(--text2);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;}
+.icon-btn:hover{background:var(--surface2);color:var(--accent);}
+
+/* ── NOTES ── */
+.note-item{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:var(--tr);position:relative;}
+.note-item:hover{border-color:var(--accent);}
+.note-item.unread{border-color:rgba(var(--accent-rgb),.4);background:rgba(var(--accent-rgb),.05);}
+.note-item.pinned{border-color:rgba(var(--accent-rgb),.5);}
+.ni-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.ni-from{font-size:11px;color:var(--accent);font-weight:500;}
+.ni-time{font-size:10px;color:var(--text2);}
+.ni-body{font-size:12px;color:var(--text);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ni-acts{display:flex;gap:4px;margin-top:6px;}
+.nc{background:rgba(var(--accent-rgb),.06);border:1.5px dashed rgba(var(--accent-rgb),.35);border-radius:12px;padding:13px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+
+/* ── ENVELOPES ── */
+.ltr-paper{background:var(--surface);border-radius:12px;padding:16px;font-size:13px;line-height:2;color:var(--text);white-space:pre-wrap;word-break:break-word;background-image:repeating-linear-gradient(transparent,transparent 31px,rgba(var(--accent-rgb),.08) 31px,rgba(var(--accent-rgb),.08) 32px);min-height:120px;}
+.env-item{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:var(--tr);}
+.env-item:hover{border-color:var(--accent);}
+.env-title{font-size:13px;color:var(--text);font-weight:500;margin-bottom:3px;}
+.env-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.env-pending{color:var(--accent);}
+
+/* ── ENERGY ── */
+.entab{transition:var(--tr);}
+.entab.on{background:var(--accent)!important;color:#fff!important;}
+.en-current{font-size:14px;color:var(--accent);font-weight:500;padding:9px 0;min-height:34px;}
+.proposal-box{background:rgba(var(--accent-rgb),.07);border:1.5px solid rgba(var(--accent-rgb),.25);border-radius:11px;padding:11px;margin:9px 0;}
+.proposal-val{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:6px;}
+.proposal-meta{font-size:11px;color:var(--text2);}
+.tl-item{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);}
+.tl-item:last-child{border-bottom:none;}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px;}
+.tl-right{flex:1;}
+.tl-val{font-size:13px;color:var(--text);font-weight:500;}
+.tl-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* ── STICKER MGR ── */
+.stk-grid{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0;}
+.stk-item{width:70px;height:70px;border-radius:11px;overflow:hidden;position:relative;background:var(--surface2);flex-shrink:0;}
+.stk-item img{width:100%;height:100%;object-fit:cover;}
+.stk-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;}
+.stk-add-btn{border:2px dashed var(--border);color:var(--text2);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* ── KAOMOJI LIST ── */
+.km-list-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);}
+.km-list-item:last-child{border-bottom:none;}
+.km-txt{font-size:13px;color:var(--text);}
+
+/* ── CONTEXT MENU ── */
 #ctx{position:fixed;background:var(--surface);border-radius:13px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:800;display:none;overflow:hidden;min-width:130px;}
-#ctx.open{display:block;animation:zIn .14s ease;}
+#ctx.open{display:block;animation:zIn .13s ease;}
 .cx{padding:10px 14px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:9px;transition:background .12s;}
 .cx:hover{background:rgba(var(--accent-rgb),.08);}
 .cx i{font-size:13px;color:var(--accent);width:14px;}
-.cx.red{color:#ff5050;}.cx.red i{color:#ff5050;}
-/* avatar edit pop */
+.cx.red{color:#f05050;}.cx.red i{color:#f05050;}
+
+/* ── AVATAR POP ── */
 #av-pop{position:fixed;background:var(--surface);border-radius:13px;box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:900;display:none;padding:4px 0;min-width:148px;}
-#av-pop.open{display:block;animation:zIn .14s ease;}
-/* call overlay */
-#call-ov{position:fixed;inset:0;background:#0d0d0d;z-index:1000;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 30px max(36px,env(safe-area-inset-bottom,36px));}
+#av-pop.open{display:block;animation:zIn .13s ease;}
+
+/* ── CALL OVERLAY ── */
+#call-ov{position:fixed;inset:0;background:#0e0e0e;z-index:1000;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 30px max(40px,env(safe-area-inset-bottom,40px));}
 #call-ov.open{display:flex;}
-.c-av{width:90px;height:90px;border-radius:50%;background:rgba(var(--accent-rgb),.2);display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--accent);overflow:hidden;border:2px solid rgba(var(--accent-rgb),.35);}
+.c-av{width:88px;height:88px;border-radius:50%;background:rgba(var(--accent-rgb),.18);display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--accent);overflow:hidden;border:2px solid rgba(var(--accent-rgb),.3);}
 .c-av img{width:100%;height:100%;object-fit:cover;}
 .c-name{font-size:20px;font-weight:600;color:#fff;margin-top:14px;}
-.c-stat{font-size:13px;color:rgba(255,255,255,.55);margin-top:5px;}
-.c-timer{font-size:18px;color:#fff;font-variant-numeric:tabular-nums;}
-.c-btns{display:flex;gap:22px;}
-.c-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;transition:var(--tr);}
+.c-stat{font-size:13px;color:rgba(255,255,255,.5);margin-top:5px;}
+.c-timer{font-size:18px;color:#fff;font-variant-numeric:tabular-nums;margin-top:8px;}
+.c-btns{display:flex;gap:22px;justify-content:center;}
+.c-btn{width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;transition:var(--tr);}
 .c-btn:active{transform:scale(.88);}
-.c-end{background:#ff4444;}.c-mute{background:rgba(255,255,255,.15);}.c-cam{background:rgba(255,255,255,.15);}.c-acc{background:#4caf50;}
-/* letter */
-.ltr-paper{background:var(--surface);border-radius:13px;padding:18px;font-size:13px;line-height:2;color:var(--text);white-space:pre-wrap;word-break:break-word;background-image:repeating-linear-gradient(transparent,transparent 31px,rgba(var(--accent-rgb),.08) 31px,rgba(var(--accent-rgb),.08) 32px);min-height:140px;}
-.ltr-item{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:var(--tr);}
-.ltr-item:hover{border-color:var(--accent);}
-.ltr-item-title{font-size:13px;color:var(--text);font-weight:500;margin-bottom:3px;}
-.ltr-item-meta{font-size:11px;color:var(--text2);}
-.ltr-pending{color:var(--accent);font-size:11px;}
-/* anniv */
-.an-item{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:10px;}
-.an-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0;}
-.an-info{flex:1;}.an-name{font-size:13px;color:var(--text);font-weight:500;}.an-date{font-size:11px;color:var(--text2);margin-top:1px;}
-.an-days{font-size:12px;color:var(--accent);font-weight:600;}
-.an-del{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;border-radius:6px;font-size:12px;}
-.an-del:hover{color:#ff5050;}
-/* note */
-.nc{background:linear-gradient(135deg,rgba(var(--accent-rgb),.1),rgba(var(--accent-rgb),.02));border:1.5px dashed rgba(var(--accent-rgb),.4);border-radius:13px;padding:14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;}
-/* search */
-.sr{padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;}
-.sr:last-child{border-bottom:none;}
-.sr-txt{font-size:13px;color:var(--text);margin-bottom:3px;}
-.sr-meta{font-size:11px;color:var(--text2);}
-mark{background:rgba(var(--accent-rgb),.25);border-radius:2px;padding:0 2px;color:inherit;}
-/* toast */
-#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--surface);border-radius:9px;padding:9px 16px;font-size:12px;color:var(--text);box-shadow:var(--shadow);z-index:2000;transition:transform .28s ease;white-space:nowrap;border:1px solid var(--border);}
+.c-end{background:#f04444;}.c-mute{background:rgba(255,255,255,.14);}.c-cam{background:rgba(255,255,255,.14);}.c-acc{background:#4caf50;}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--surface);border-radius:9px;padding:8px 16px;font-size:12px;color:var(--text);box-shadow:var(--shadow);z-index:2000;transition:transform .26s ease;white-space:nowrap;border:1px solid var(--border);}
 #toast.show{transform:translateX(-50%) translateY(0);}
-/* energy */
-.en-sec{margin-bottom:16px;}
-.en-ttl{font-size:12px;font-weight:600;color:var(--text);margin-bottom:7px;display:flex;align-items:center;gap:5px;}
-.en-ttl i{color:var(--accent);}
-/* misc */
-.mt8{margin-top:8px;}.mt12{margin-top:12px;}
-.empty{text-align:center;padding:36px 20px;color:var(--text2);font-size:12px;}
-.empty i{font-size:28px;opacity:.28;display:block;margin-bottom:9px;}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:32px 20px;color:var(--text2);font-size:12px;}
+.empty i{font-size:26px;opacity:.25;display:block;margin-bottom:8px;}
+mark{background:rgba(var(--accent-rgb),.25);border-radius:2px;padding:0 2px;color:inherit;}
 input[type=file]{display:none;}
-.pill-opt{display:inline-flex;align-items:center;padding:5px 12px;border-radius:18px;background:var(--surface2);border:1.5px solid var(--border);font-size:12px;color:var(--text);cursor:pointer;transition:var(--tr);margin:2px;}
-.pill-opt.sel{background:rgba(var(--accent-rgb),.13);border-color:var(--accent);color:var(--accent);}
-.note-sb{display:inline-flex;align-items:center;padding:5px 13px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);transition:var(--tr);}
-.note-sb.on{background:rgba(var(--accent-rgb),.13);border-color:var(--accent);color:var(--accent);}
-#custom-bbl-css{}
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- HEADER -->
+
+  <!-- ── HEADER ── -->
   <div id="header">
     <div class="hd-user" id="partner-ui">
-      <div class="hd-avatar" id="partner-av"><i class="fas fa-user"></i></div>
+      <div class="hd-avatar" id="partner-av"><i class="fas fa-user" style="font-size:13px;"></i></div>
       <div class="hd-name" id="partner-nm">梦角</div>
       <div class="hd-status" id="partner-st">在线</div>
     </div>
-    <div class="hd-actions">
-      <button class="hd-btn" id="btn-energy" title="能量状态"><i class="fas fa-bolt"></i></button>
-      <button class="hd-btn" id="btn-letter" title="信封投递"><i class="fas fa-envelope"></i></button>
-      <button class="hd-btn" id="btn-search" title="搜索"><i class="fas fa-search"></i></button>
+    <div class="hd-center">
       <button class="hd-btn" id="btn-settings" title="设置"><i class="fas fa-cog"></i></button>
+      <button class="hd-btn" id="btn-energy" title="能量状态"><i class="fas fa-bolt"></i><span class="red-dot" id="energy-dot"></span></button>
     </div>
     <div class="hd-user" id="my-ui">
-      <div class="hd-avatar" id="my-av"><i class="fas fa-user"></i></div>
+      <div class="hd-avatar" id="my-av"><i class="fas fa-user" style="font-size:13px;"></i></div>
       <div class="hd-name" id="my-nm">我</div>
       <div class="hd-status" id="my-st">在线</div>
     </div>
   </div>
-  <!-- CHAT -->
+
+  <!-- ── CHAT ── -->
   <div id="chat-wrap">
     <div id="chat-bg"></div>
     <div id="typing-ind">
-      <div class="t-av" id="t-av"><i class="fas fa-user" style="font-size:10px;"></i></div>
+      <div class="t-av" id="t-av"><i class="fas fa-user" style="font-size:9px;"></i></div>
       <div class="t-dots"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div>
     </div>
   </div>
-  <!-- EMOJI PANEL -->
+
+  <!-- ── EMOJI PANEL ── -->
   <div id="emoji-panel">
     <div class="e-tabs">
       <button class="e-tab on" data-etab="emoji">表情</button>
       <button class="e-tab" data-etab="kaomoji">颜文字</button>
       <button class="e-tab" data-etab="sticker">贴图</button>
     </div>
-    <div class="e-grid" id="e-grid"></div>
+    <div id="e-content"></div>
   </div>
-  <!-- INPUT -->
-  <div id="input-wrap">
+
+  <!-- ── PLUS MENU ── -->
+  <div id="plus-menu">
+    <div class="pm-item" id="pm-camera"><i class="fas fa-camera"></i><span>相机</span></div>
+    <div class="pm-item" id="pm-gallery"><i class="fas fa-image"></i><span>相册</span></div>
+    <div class="pm-item" id="pm-video"><i class="fas fa-video"></i><span>视频</span></div>
+    <div class="pm-item" id="pm-note"><i class="fas fa-thumbtack"></i><span>小纸条</span></div>
+  </div>
+
+  <!-- ── INPUT ── -->
+  <div id="input-area">
     <div id="reply-prev"><span id="rp-txt"></span><span id="rp-close">✕</span></div>
     <div id="input-row">
-      <button class="i-btn" id="btn-emoji-tog"><i class="fas fa-face-smile"></i></button>
-      <button class="i-btn" id="btn-img"><i class="fas fa-image"></i></button>
-      <button class="i-btn" id="btn-call-start"><i class="fas fa-video"></i></button>
-      <button class="i-btn" id="btn-note"><i class="fas fa-scroll"></i></button>
+      <button class="i-btn" id="btn-plus"><i class="fas fa-plus"></i></button>
       <textarea id="msg-in" rows="1" placeholder="说点什么…"></textarea>
+      <button class="i-btn" id="btn-emoji-tog"><i class="fas fa-face-smile"></i></button>
       <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
 </div>
 
-<!-- CTX MENU -->
+<!-- ── CONTEXT MENU ── -->
 <div id="ctx">
   <div class="cx" id="cx-quote"><i class="fas fa-reply"></i>引用</div>
   <div class="cx" id="cx-copy"><i class="fas fa-copy"></i>复制</div>
   <div class="cx red" id="cx-del"><i class="fas fa-trash"></i>删除</div>
 </div>
-<!-- AVATAR POP -->
+
+<!-- ── AVATAR POP ── -->
 <div id="av-pop">
   <div class="cx" id="ap-photo"><i class="fas fa-camera"></i>更换头像</div>
   <div class="cx" id="ap-name"><i class="fas fa-pen"></i>修改名字</div>
-  <div class="cx" id="ap-status"><i class="fas fa-circle-dot"></i>修改状态</div>
 </div>
-<!-- TOAST -->
+
+<!-- ── TOAST ── -->
 <div id="toast"></div>
-<!-- FILE INPUTS -->
+
+<!-- ── FILE INPUTS ── -->
 <input type="file" id="fi-img" accept="image/*">
+<input type="file" id="fi-camera" accept="image/*" capture="environment">
 <input type="file" id="fi-av" accept="image/*">
 <input type="file" id="fi-wall" accept="image/*">
-<input type="file" id="fi-stk-my" accept="image/*" multiple>
-<input type="file" id="fi-stk-pt" accept="image/*" multiple>
+<input type="file" id="fi-sticker" accept="image/*" multiple>
+<input type="file" id="fi-note-img" accept="image/*">
+<input type="file" id="fi-wc-import" accept=".json">
 
-<!-- VIDEO CALL -->
+<!-- ── VIDEO CALL ── -->
 <div id="call-ov">
-  <div id="call-in-view">
-    <div style="text-align:center;">
-      <div class="c-av" id="c-av-in" style="margin:0 auto;"><i class="fas fa-user"></i></div>
-      <div class="c-name" id="c-nm-in">梦角</div>
-      <div class="c-stat">视频通话邀请…</div>
-      <div style="margin-top:38px;display:flex;gap:40px;justify-content:center;">
-        <button class="c-btn c-end" id="btn-c-dec"><i class="fas fa-phone-slash"></i></button>
-        <button class="c-btn c-acc" id="btn-c-acc"><i class="fas fa-phone"></i></button>
-      </div>
+  <div id="call-in-view" style="text-align:center;">
+    <div class="c-av" id="c-av-in" style="margin:0 auto;"><i class="fas fa-user"></i></div>
+    <div class="c-name" id="c-nm-in">梦角</div>
+    <div class="c-stat">视频通话邀请…</div>
+    <div class="c-btns" style="margin-top:38px;">
+      <button class="c-btn c-end" id="btn-c-dec"><i class="fas fa-phone-slash"></i></button>
+      <button class="c-btn c-acc" id="btn-c-acc"><i class="fas fa-phone"></i></button>
     </div>
   </div>
   <div id="call-act-view" style="display:none;text-align:center;width:100%;">
     <div class="c-av" id="c-av-act" style="margin:0 auto;"><i class="fas fa-user"></i></div>
     <div class="c-name" id="c-nm-act">梦角</div>
     <div class="c-timer" id="c-timer">00:00</div>
-    <div class="c-btns" style="margin-top:38px;justify-content:center;">
+    <div class="c-btns" style="margin-top:32px;">
       <button class="c-btn c-mute" id="btn-c-mute"><i class="fas fa-microphone-slash"></i></button>
       <button class="c-btn c-end" id="btn-c-end"><i class="fas fa-phone-slash"></i></button>
       <button class="c-btn c-cam" id="btn-c-cam"><i class="fas fa-video-slash"></i></button>
@@ -316,17 +380,20 @@ input[type=file]{display:none;}
   </div>
 </div>
 
-<!-- ========= MODALS ========= -->
+<!-- ════════ MODALS ════════ -->
+
 <!-- SETTINGS -->
 <div class="ov" id="ov-settings">
   <div class="modal">
     <div class="m-head"><span class="m-title">设置</span><button class="m-close" data-close="ov-settings">✕</button></div>
     <div class="m-body">
       <div class="sg">
-        <div class="sc" data-open="ov-appearance"><i class="fas fa-palette"></i><span>外观</span></div>
-        <div class="sc" data-open="ov-chat-set"><i class="fas fa-comments"></i><span>聊天</span></div>
-        <div class="sc" data-open="ov-advanced"><i class="fas fa-wand-magic-sparkles"></i><span>高级功能</span></div>
-        <div class="sc" data-open="ov-anniv"><i class="fas fa-heart"></i><span>重要日</span></div>
+        <div class="sc" data-open="ov-advanced"><i class="fas fa-wand-magic-sparkles"></i><span>高级设置</span></div>
+        <div class="sc" data-open="ov-appearance"><i class="fas fa-palette"></i><span>美化</span></div>
+        <div class="sc" data-open="ov-notes-mgr"><i class="fas fa-thumbtack"></i><span>小纸条</span></div>
+        <div class="sc" data-open="ov-envelope-mgr"><i class="fas fa-envelope"></i><span>信封</span></div>
+        <div class="sc" data-open="ov-energy"><i class="fas fa-bolt"></i><span>能量状态</span></div>
+        <div class="sc" data-open="ov-chat-set"><i class="fas fa-sliders"></i><span>聊天设置</span></div>
       </div>
     </div>
   </div>
@@ -336,18 +403,11 @@ input[type=file]{display:none;}
 <div class="ov" id="ov-appearance">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-settings" style="background:none;font-size:18px;color:var(--text2);">‹</button>
-      <span class="m-title">外观设置</span>
+      <button class="back-btn" data-back="ov-settings">‹</button>
+      <span class="m-title">美化</span>
       <button class="m-close" data-close="ov-appearance">✕</button>
     </div>
     <div class="m-body">
-      <div class="fg">
-        <div class="sec">主题</div>
-        <div style="display:flex;gap:6px;background:var(--surface2);border-radius:9px;padding:3px;">
-          <button class="btn btn-sm" id="th-light" style="flex:1;font-family:var(--font);">☀️ 浅色</button>
-          <button class="btn btn-sm" id="th-dark" style="flex:1;margin-left:3px;font-family:var(--font);">🌙 深色</button>
-        </div>
-      </div>
       <div class="fg">
         <div class="sec">主色调</div>
         <div class="c-row" id="accent-row">
@@ -356,7 +416,7 @@ input[type=file]{display:none;}
           <div class="c-dot" data-c="#89b4d4" style="background:#89b4d4;"></div>
           <div class="c-dot" data-c="#a8c5a0" style="background:#a8c5a0;"></div>
           <div class="c-dot" data-c="#b8a8d4" style="background:#b8a8d4;"></div>
-          <div class="c-dot" data-c="#d4a8a8" style="background:#d4a8a8;"></div>
+          <div class="c-dot" data-c="#d4b896" style="background:#d4b896;"></div>
           <div class="c-dot" data-c="#888" style="background:#888;"></div>
         </div>
       </div>
@@ -364,26 +424,31 @@ input[type=file]{display:none;}
         <div class="sec">聊天背景</div>
         <div style="display:flex;gap:7px;flex-wrap:wrap;">
           <button class="btn btn-g btn-sm" id="btn-wall"><i class="fas fa-image"></i> 上传图片</button>
-          <button class="btn btn-g btn-sm" id="btn-wall-clr"><i class="fas fa-times"></i> 清除</button>
+          <button class="btn btn-g btn-sm" id="btn-wall-clr"><i class="fas fa-times"></i> 恢复默认</button>
         </div>
-        <div class="sl-row mt8">
-          <label>透明度</label>
-          <input type="range" min="10" max="80" value="35" id="wall-op">
-          <span id="wall-op-v">35%</span>
-        </div>
+        <div class="sl-row mt8"><label>透明度</label><input type="range" min="10" max="80" value="35" id="wall-op"><span id="wall-op-v">35%</span></div>
       </div>
       <div class="fg">
         <div class="sec">字体大小</div>
-        <div class="sl-row">
-          <label>大小</label>
-          <input type="range" min="12" max="20" value="15" id="fs-sl">
-          <span id="fs-v">15px</span>
-        </div>
+        <div class="sl-row"><label>大小</label><input type="range" min="12" max="24" value="16" id="fs-sl"><span id="fs-v">16px</span></div>
       </div>
       <div class="fg">
         <div class="sec">气泡 CSS 自定义</div>
-        <textarea class="fta" id="bbl-css" rows="4" placeholder=".msg-bbl { border-radius: 22px; }&#10;.sent .msg-bbl { background: #ff8ab4; }"></textarea>
-        <button class="btn btn-p btn-sm mt8" id="apply-bbl-css">应用</button>
+        <div id="bbl-preview" style="background:var(--surface2);border-radius:11px;padding:11px;margin-bottom:9px;">
+          <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:7px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(var(--accent-rgb),.15);flex-shrink:0;"></div>
+            <div class="msg-bbl recv" style="font-size:13px;">梦角的消息示例</div>
+          </div>
+          <div style="display:flex;flex-direction:row-reverse;align-items:flex-end;gap:6px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(var(--accent-rgb),.15);flex-shrink:0;"></div>
+            <div class="msg-bbl sent" style="font-size:13px;">我的消息示例</div>
+          </div>
+        </div>
+        <textarea class="fta" id="bbl-css-in" rows="4" placeholder=".msg-bbl { border-radius: 22px; }&#10;.sent .msg-bbl { background: #ff8ab4; color: #fff; }"></textarea>
+        <div style="display:flex;gap:7px;margin-top:8px;">
+          <button class="btn btn-p btn-sm flex1" id="apply-bbl-css">应用</button>
+          <button class="btn btn-g btn-sm" id="reset-bbl-css">重置</button>
+        </div>
       </div>
     </div>
   </div>
@@ -393,30 +458,34 @@ input[type=file]{display:none;}
 <div class="ov" id="ov-chat-set">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-settings" style="background:none;font-size:18px;color:var(--text2);">‹</button>
+      <button class="back-btn" data-back="ov-settings">‹</button>
       <span class="m-title">聊天设置</span>
       <button class="m-close" data-close="ov-chat-set">✕</button>
     </div>
     <div class="m-body">
       <div class="fg">
-        <div class="sec">梦角回复速度</div>
-        <div class="sl-row"><label>最短</label><input type="range" min="1" max="15" value="3" id="rmin-sl"><span id="rmin-v">3s</span></div>
-        <div class="sl-row"><label>最长</label><input type="range" min="2" max="30" value="7" id="rmax-sl"><span id="rmax-v">7s</span></div>
+        <div class="sec">梦角主动发送（不需要我先说话）</div>
+        <div class="tog-row">
+          <div><div class="tog-lbl">启用主动发送</div><div class="tog-sub">梦角会按设定间隔主动发消息</div></div>
+          <div class="tog" id="tog-autosend"></div>
+        </div>
+        <div id="autosend-cfg" style="margin-top:6px;">
+          <div class="sl-row"><label>最短间隔</label><input type="range" min="1" max="120" value="30" id="as-min-sl"><span id="as-min-v">30分钟</span></div>
+          <div class="sl-row"><label>最长间隔</label><input type="range" min="2" max="360" value="60" id="as-max-sl"><span id="as-max-v">60分钟</span></div>
+        </div>
       </div>
+      <div class="dv"></div>
+      <div class="fg">
+        <div class="sec">梦角回复延迟（回复我的消息）</div>
+        <div class="sl-row"><label>最短</label><input type="range" min="1" max="120" value="3" id="rd-min-sl"><span id="rd-min-v">3秒</span></div>
+        <div class="sl-row"><label>最长</label><input type="range" min="2" max="600" value="15" id="rd-max-sl"><span id="rd-max-v">15秒</span></div>
+      </div>
+      <div class="dv"></div>
       <div class="fg">
         <div class="sec">功能开关</div>
-        <div class="tog-row">
-          <div><div class="tog-lbl">引用回复</div><div class="tog-sub">长按消息可引用</div></div>
-          <div class="tog on" id="tog-quote"></div>
-        </div>
-        <div class="tog-row">
-          <div><div class="tog-lbl">消息音效</div><div class="tog-sub">KakaoTalk 音效</div></div>
-          <div class="tog on" id="tog-sound"></div>
-        </div>
-        <div class="tog-row">
-          <div><div class="tog-lbl">正在输入提示</div><div class="tog-sub">梦角回复前显示动画</div></div>
-          <div class="tog on" id="tog-typing"></div>
-        </div>
+        <div class="tog-row"><div><div class="tog-lbl">消息音效</div></div><div class="tog on" id="tog-sound"></div></div>
+        <div class="tog-row"><div><div class="tog-lbl">正在输入提示</div></div><div class="tog on" id="tog-typing"></div></div>
+        <div class="tog-row"><div><div class="tog-lbl">引用回复</div></div><div class="tog on" id="tog-quote"></div></div>
       </div>
     </div>
   </div>
@@ -426,33 +495,55 @@ input[type=file]{display:none;}
 <div class="ov" id="ov-advanced">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-settings" style="background:none;font-size:18px;color:var(--text2);">‹</button>
-      <span class="m-title">高级功能</span>
+      <button class="back-btn" data-back="ov-settings">‹</button>
+      <span class="m-title">高级设置</span>
       <button class="m-close" data-close="ov-advanced">✕</button>
     </div>
     <div class="m-body">
       <div class="sg">
-        <div class="sc" data-open="ov-cards"><i class="fas fa-layer-group"></i><span>字卡管理</span></div>
-        <div class="sc" data-open="ov-note-opts"><i class="fas fa-scroll"></i><span>纸条选项</span></div>
-        <div class="sc" data-open="ov-energy-opts"><i class="fas fa-bolt"></i><span>能量选项</span></div>
-        <div class="sc" data-open="ov-stk-mgr"><i class="fas fa-images"></i><span>贴图库</span></div>
+        <div class="sc" data-open="ov-wordcards"><i class="fas fa-layer-group"></i><span>字卡</span></div>
+        <div class="sc" data-open="ov-kaomoji-mgr"><i class="fas fa-face-smile"></i><span>颜文字</span></div>
+        <div class="sc" data-open="ov-sticker-mgr"><i class="fas fa-images"></i><span>表情包</span></div>
+        <div class="sc" data-open="ov-status-mgr"><i class="fas fa-circle-dot"></i><span>状态预设</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- FLASHCARDS -->
-<div class="ov" id="ov-cards">
+<!-- WORDCARDS -->
+<div class="ov" id="ov-wordcards">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-advanced" style="background:none;font-size:18px;color:var(--text2);">‹</button>
+      <button class="back-btn" data-back="ov-advanced">‹</button>
       <span class="m-title">字卡管理</span>
-      <button class="m-close" data-close="ov-cards">✕</button>
+      <button class="m-close" data-close="ov-wordcards">✕</button>
     </div>
     <div class="m-body">
-      <div class="sec">梦角会随机从这些字卡中抽取内容回复你</div>
-      <div style="display:flex;gap:7px;margin-bottom:10px;">
-        <textarea class="fta" id="new-card-in" rows="2" placeholder="输入一句话…" style="flex:1;"></textarea>
+      <div style="display:flex;gap:7px;margin-bottom:11px;">
+        <button class="btn btn-g btn-sm flex1" id="btn-wc-export"><i class="fas fa-download"></i> 导出 JSON</button>
+        <button class="btn btn-g btn-sm flex1" id="btn-wc-import"><i class="fas fa-upload"></i> 导入 JSON</button>
+      </div>
+      <div id="group-list"></div>
+      <div class="mt12" style="display:flex;gap:7px;">
+        <input class="fi" id="new-group-in" placeholder="新分组名称" style="flex:1;">
+        <button class="btn btn-p btn-sm" id="btn-add-group">添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP EDIT -->
+<div class="ov" id="ov-group-edit">
+  <div class="modal">
+    <div class="m-head">
+      <button class="back-btn" id="back-group">‹</button>
+      <span class="m-title" id="group-edit-title">字卡</span>
+      <button class="m-close" data-close="ov-group-edit">✕</button>
+    </div>
+    <div class="m-body">
+      <div id="group-card-count" style="font-size:11px;color:var(--text2);margin-bottom:9px;"></div>
+      <div style="display:flex;gap:7px;margin-bottom:9px;">
+        <textarea class="fta" id="new-card-in" rows="2" placeholder="输入字卡内容…" style="flex:1;"></textarea>
         <button class="btn btn-p btn-sm" id="btn-add-card" style="align-self:flex-end;">添加</button>
       </div>
       <div id="card-list"></div>
@@ -460,108 +551,165 @@ input[type=file]{display:none;}
   </div>
 </div>
 
-<!-- NOTE OPTIONS -->
-<div class="ov" id="ov-note-opts">
+<!-- KAOMOJI MGR -->
+<div class="ov" id="ov-kaomoji-mgr">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-advanced" style="background:none;font-size:18px;color:var(--text2);">‹</button>
-      <span class="m-title">小纸条预设选项</span>
-      <button class="m-close" data-close="ov-note-opts">✕</button>
+      <button class="back-btn" data-back="ov-advanced">‹</button>
+      <span class="m-title">颜文字管理</span>
+      <button class="m-close" data-close="ov-kaomoji-mgr">✕</button>
     </div>
     <div class="m-body">
-      <div class="sec">发纸条时可快速选择这些预设内容</div>
+      <div class="sec">自定义颜文字（内置颜文字不可删除）</div>
       <div style="display:flex;gap:7px;margin-bottom:9px;">
-        <input class="fi" id="new-nopt-in" placeholder="例：今天要多喝水哦" style="flex:1;">
-        <button class="btn btn-p btn-sm" id="btn-add-nopt">添加</button>
+        <input class="fi" id="new-km-in" placeholder="例：(˘▾˘)~♪" style="flex:1;">
+        <button class="btn btn-p btn-sm" id="btn-add-km">添加</button>
       </div>
-      <div id="nopt-list"></div>
+      <div id="km-custom-list"></div>
     </div>
   </div>
 </div>
 
-<!-- ENERGY OPTIONS -->
-<div class="ov" id="ov-energy-opts">
+<!-- STICKER MGR -->
+<div class="ov" id="ov-sticker-mgr">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-advanced" style="background:none;font-size:18px;color:var(--text2);">‹</button>
-      <span class="m-title">能量状态选项</span>
-      <button class="m-close" data-close="ov-energy-opts">✕</button>
+      <button class="back-btn" data-back="ov-advanced">‹</button>
+      <span class="m-title">表情包管理</span>
+      <button class="m-close" data-close="ov-sticker-mgr">✕</button>
     </div>
     <div class="m-body">
-      <div class="fg">
-        <div class="sec">我的能量选项</div>
-        <div style="display:flex;gap:7px;margin-bottom:7px;">
-          <input class="fi" id="new-me-en" placeholder="例：元气满满" style="flex:1;">
-          <button class="btn btn-p btn-sm" id="btn-add-me-en">+</button>
-        </div>
-        <div id="me-en-list"></div>
+      <div style="margin-bottom:11px;">
+        <button class="btn btn-p btn-sm" id="btn-add-sticker"><i class="fas fa-plus"></i> 添加表情包</button>
       </div>
-      <div class="dv"></div>
-      <div class="fg">
-        <div class="sec">梦角的能量选项</div>
-        <div style="display:flex;gap:7px;margin-bottom:7px;">
-          <input class="fi" id="new-pt-en" placeholder="例：有点累" style="flex:1;">
-          <button class="btn btn-p btn-sm" id="btn-add-pt-en">+</button>
+      <div class="stk-grid" id="stk-mgr-grid">
+        <div class="stk-item stk-add-btn" id="stk-add-placeholder" style="width:70px;height:70px;border-radius:11px;border:2px dashed var(--border);color:var(--text2);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-plus"></i>
         </div>
-        <div id="pt-en-list"></div>
-      </div>
-      <div class="dv"></div>
-      <div class="fg">
-        <div class="sec">关系状态选项</div>
-        <div style="display:flex;gap:7px;margin-bottom:7px;">
-          <input class="fi" id="new-rel-en" placeholder="例：甜甜的" style="flex:1;">
-          <button class="btn btn-p btn-sm" id="btn-add-rel-en">+</button>
-        </div>
-        <div id="rel-en-list"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- STICKER MANAGER -->
-<div class="ov" id="ov-stk-mgr">
+<!-- STATUS PRESETS -->
+<div class="ov" id="ov-status-mgr">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-advanced" style="background:none;font-size:18px;color:var(--text2);">‹</button>
-      <span class="m-title">贴图库管理</span>
-      <button class="m-close" data-close="ov-stk-mgr">✕</button>
+      <button class="back-btn" data-back="ov-advanced">‹</button>
+      <span class="m-title">状态预设</span>
+      <button class="m-close" data-close="ov-status-mgr">✕</button>
     </div>
     <div class="m-body">
-      <div class="sec">我的贴图</div>
-      <div class="stk-grid" id="mgr-my-stk">
-        <div class="stk-item stk-add" id="btn-add-my-stk" style="display:flex;align-items:center;justify-content:center;"><i class="fas fa-plus"></i></div>
+      <div class="fg">
+        <div class="sec">我的状态预设</div>
+        <div style="display:flex;gap:7px;margin-bottom:7px;">
+          <input class="fi" id="new-my-st" placeholder="例：元气满满" style="flex:1;">
+          <button class="btn btn-p btn-sm" id="btn-add-my-st">+</button>
+        </div>
+        <div id="my-st-list"></div>
       </div>
       <div class="dv"></div>
-      <div class="sec">梦角的贴图</div>
-      <div class="stk-grid" id="mgr-pt-stk">
-        <div class="stk-item stk-add" id="btn-add-pt-stk" style="display:flex;align-items:center;justify-content:center;"><i class="fas fa-plus"></i></div>
+      <div class="fg">
+        <div class="sec">梦角的状态预设</div>
+        <div style="display:flex;gap:7px;margin-bottom:7px;">
+          <input class="fi" id="new-pt-st" placeholder="例：临在" style="flex:1;">
+          <button class="btn btn-p btn-sm" id="btn-add-pt-st">+</button>
+        </div>
+        <div id="pt-st-list"></div>
+      </div>
+      <div class="dv"></div>
+      <div class="fg">
+        <div class="sec">我们的共同状态预设</div>
+        <div style="display:flex;gap:7px;margin-bottom:7px;">
+          <input class="fi" id="new-rel-st" placeholder="例：稳定共存期" style="flex:1;">
+          <button class="btn btn-p btn-sm" id="btn-add-rel-st">+</button>
+        </div>
+        <div id="rel-st-list"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ANNIVERSARY -->
-<div class="ov" id="ov-anniv">
+<!-- NOTES MGR -->
+<div class="ov" id="ov-notes-mgr">
   <div class="modal">
     <div class="m-head">
-      <button class="m-close" data-back="ov-settings" style="background:none;font-size:18px;color:var(--text2);">‹</button>
-      <span class="m-title">重要日</span>
-      <button class="m-close" data-close="ov-anniv">✕</button>
+      <button class="back-btn" data-back="ov-settings">‹</button>
+      <span class="m-title">小纸条 <span id="note-unread-badge" style="font-size:11px;color:var(--accent);"></span></span>
+      <button class="m-close" data-close="ov-notes-mgr">✕</button>
+    </div>
+    <div class="m-body" id="notes-list"><div class="empty"><i class="fas fa-thumbtack"></i>暂无小纸条</div></div>
+  </div>
+</div>
+
+<!-- NOTE SEND -->
+<div class="ov center" id="ov-note-send">
+  <div class="modal">
+    <div class="m-head"><span class="m-title">📌 递小纸条</span><button class="m-close" data-close="ov-note-send">✕</button></div>
+    <div class="m-body">
+      <div style="display:flex;gap:7px;margin-bottom:9px;">
+        <div class="note-sb on" id="nsb-me" data-s="me">我发</div>
+        <div class="note-sb" id="nsb-pt" data-s="partner">梦角发</div>
+      </div>
+      <textarea class="fta" id="note-in" rows="4" placeholder="想说的话…（最多200字）" maxlength="200"></textarea>
+      <div style="margin-top:8px;display:flex;gap:7px;align-items:center;">
+        <button class="btn btn-g btn-sm" id="btn-note-img"><i class="fas fa-image"></i> 附图</button>
+        <span id="note-img-name" style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <span id="note-img-clr" style="display:none;font-size:11px;color:#f05050;cursor:pointer;">✕</span>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-g flex1" data-close="ov-note-send">取消</button>
+      <button class="btn btn-p flex1" id="btn-send-note">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE VIEW -->
+<div class="ov center" id="ov-note-view">
+  <div class="modal">
+    <div class="m-head"><span class="m-title">📌 小纸条</span><button class="m-close" data-close="ov-note-view">✕</button></div>
+    <div class="m-body">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:9px;" id="note-view-meta"></div>
+      <div class="nc" id="note-view-txt"></div>
+      <img id="note-view-img" style="display:none;max-width:100%;border-radius:9px;margin-top:9px;" alt="">
+    </div>
+  </div>
+</div>
+
+<!-- ENVELOPE MGR -->
+<div class="ov" id="ov-envelope-mgr">
+  <div class="modal">
+    <div class="m-head">
+      <button class="back-btn" data-back="ov-settings">‹</button>
+      <span class="m-title">✉️ 信封管理</span>
+      <button class="m-close" data-close="ov-envelope-mgr">✕</button>
     </div>
     <div class="m-body">
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px;">
-        <input class="fi" id="an-name-in" placeholder="纪念日名称" style="flex:1;min-width:100px;">
-        <input type="date" class="fi" id="an-date-in" style="width:138px;">
+      <div style="display:flex;background:var(--surface2);border-radius:9px;padding:3px;margin-bottom:13px;">
+        <button class="btn btn-sm etab on" data-etab="write" style="flex:1;font-family:var(--font);">写信</button>
+        <button class="btn btn-sm etab" data-etab="sent" style="flex:1;margin-left:3px;font-family:var(--font);">寄出</button>
+        <button class="btn btn-sm etab" data-etab="received" style="flex:1;margin-left:3px;font-family:var(--font);">收到</button>
       </div>
-      <div style="display:flex;gap:7px;margin-bottom:14px;">
-        <select class="fi" id="an-who" style="flex:1;">
-          <option value="both">我们共同</option>
-          <option value="me">我添加</option>
-          <option value="partner">梦角添加</option>
-        </select>
-        <button class="btn btn-p btn-sm" id="btn-add-an">添加</button>
+      <div id="env-write">
+        <div class="sec">给梦角写一封信（不进入聊天记录）</div>
+        <textarea class="fta" id="env-in" rows="8" placeholder="亲爱的梦角，&#10;&#10;今天想对你说…"></textarea>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px;"><i class="fas fa-clock" style="color:var(--accent);"></i> 梦角将在 10～20 小时后回信（随机 10～20 条字卡）</div>
+        <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-send-env">寄出 ✉️</button>
       </div>
-      <div id="an-list"></div>
+      <div id="env-sent" style="display:none;"></div>
+      <div id="env-received" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ENVELOPE VIEW -->
+<div class="ov center" id="ov-env-view">
+  <div class="modal">
+    <div class="m-head"><span class="m-title" id="env-view-title">信件</span><button class="m-close" data-close="ov-env-view">✕</button></div>
+    <div class="m-body">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:9px;" id="env-view-meta"></div>
+      <div class="ltr-paper" id="env-view-body"></div>
     </div>
   </div>
 </div>
@@ -571,113 +719,60 @@ input[type=file]{display:none;}
   <div class="modal">
     <div class="m-head"><span class="m-title">⚡ 能量状态</span><button class="m-close" data-close="ov-energy">✕</button></div>
     <div class="m-body">
-      <div class="en-sec">
-        <div class="en-ttl"><i class="fas fa-user"></i> 我的能量</div>
-        <div id="me-en-opts" class="tw"></div>
-        <input class="fi mt8" id="me-en-custom" placeholder="自定义…">
+      <div style="display:flex;background:var(--surface2);border-radius:9px;padding:3px;margin-bottom:13px;">
+        <button class="btn btn-sm entab on" data-entab="me" style="flex:1;font-family:var(--font);">我的</button>
+        <button class="btn btn-sm entab" data-entab="partner" style="flex:1;margin-left:3px;font-family:var(--font);">梦角</button>
+        <button class="btn btn-sm entab" data-entab="shared" style="flex:1;margin-left:3px;font-family:var(--font);">我们</button>
       </div>
-      <div class="dv"></div>
-      <div class="en-sec">
-        <div class="en-ttl"><i class="fas fa-heart"></i> 梦角的能量</div>
-        <div id="pt-en-opts" class="tw"></div>
-        <input class="fi mt8" id="pt-en-custom" placeholder="自定义…">
+      <!-- My status -->
+      <div id="en-me-tab">
+        <div class="sec">选择当前状态（可多选）</div>
+        <div id="me-en-tags" class="tw"></div>
+        <input class="fi mt8" id="me-en-custom" placeholder="或输入自定义状态…">
+        <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-save-me-en">保存</button>
       </div>
-      <div class="dv"></div>
-      <div class="en-sec">
-        <div class="en-ttl"><i class="fas fa-infinity"></i> 我们的关系</div>
-        <div id="rel-en-opts" class="tw"></div>
-        <input class="fi mt8" id="rel-en-custom" placeholder="自定义…">
+      <!-- Partner status -->
+      <div id="en-pt-tab" style="display:none;">
+        <div class="sec">选择梦角当前状态（可多选）</div>
+        <div id="pt-en-tags" class="tw"></div>
+        <input class="fi mt8" id="pt-en-custom" placeholder="或输入自定义状态…">
+        <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-save-pt-en">保存</button>
       </div>
-    </div>
-    <div class="m-foot">
-      <button class="btn btn-g" style="flex:1;" data-close="ov-energy">取消</button>
-      <button class="btn btn-p" style="flex:1;" id="btn-save-energy">保存</button>
+      <!-- Shared status -->
+      <div id="en-shared-tab" style="display:none;">
+        <div class="sec">当前共同状态</div>
+        <div class="en-current" id="shared-current">未设置</div>
+        <div id="shared-proposal-area"></div>
+        <div class="dv"></div>
+        <div class="sec">发起新提议</div>
+        <div id="shared-tags" class="tw"></div>
+        <input class="fi mt8" id="shared-custom" placeholder="自定义状态…">
+        <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-propose-shared">发起提议</button>
+        <div class="dv" style="margin-top:13px;"></div>
+        <div class="sec">历史记录</div>
+        <div id="shared-history"></div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- NOTE SEND -->
-<div class="ov center" id="ov-note-send">
+<!-- PROPOSAL RESPOND -->
+<div class="ov center" id="ov-proposal-respond">
   <div class="modal">
-    <div class="m-head"><span class="m-title">📜 递小纸条</span><button class="m-close" data-close="ov-note-send">✕</button></div>
+    <div class="m-head"><span class="m-title">梦角的回应</span><button class="m-close" data-close="ov-proposal-respond">✕</button></div>
     <div class="m-body">
-      <div class="sec">预设选项</div>
-      <div id="note-presets" class="tw" style="margin-bottom:11px;"></div>
-      <div class="sec">自己写</div>
-      <textarea class="fta" id="note-in" rows="3" placeholder="写下想告诉他的话…"></textarea>
-      <div style="margin-top:10px;">
-        <div class="sec">由谁发送</div>
-        <div style="display:flex;gap:7px;">
-          <div class="note-sb on" id="nsb-me" data-s="me">我</div>
-          <div class="note-sb" id="nsb-pt" data-s="partner">梦角</div>
-        </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">提议的共同状态：</div>
+      <div id="proposal-val-display" style="font-size:15px;font-weight:600;color:var(--accent);margin-bottom:14px;"></div>
+      <div id="proposal-respond-btns" style="display:flex;gap:8px;flex-direction:column;">
+        <button class="btn btn-p" id="btn-proposal-yes">✓ 通过</button>
+        <button class="btn btn-d" id="btn-proposal-no">✕ 否定</button>
       </div>
-    </div>
-    <div class="m-foot">
-      <button class="btn btn-g" style="flex:1;" data-close="ov-note-send">取消</button>
-      <button class="btn btn-p" style="flex:1;" id="btn-send-note">发送</button>
-    </div>
-  </div>
-</div>
-
-<!-- NOTE VIEW -->
-<div class="ov center" id="ov-note-view">
-  <div class="modal">
-    <div class="m-head"><span class="m-title">📜 小纸条</span><button class="m-close" data-close="ov-note-view">✕</button></div>
-    <div class="m-body">
-      <div class="nc" id="note-view-txt"></div>
-      <div style="font-size:11px;color:var(--text2);margin-top:7px;" id="note-view-meta"></div>
-    </div>
-  </div>
-</div>
-
-<!-- LETTER -->
-<div class="ov" id="ov-letter">
-  <div class="modal">
-    <div class="m-head"><span class="m-title">✉️ 信封投递</span><button class="m-close" data-close="ov-letter">✕</button></div>
-    <div class="m-body">
-      <div style="display:flex;gap:0;background:var(--surface2);border-radius:9px;padding:3px;margin-bottom:13px;">
-        <button class="btn btn-sm ltab on" data-ltab="write" style="flex:1;font-family:var(--font);">写信</button>
-        <button class="btn btn-sm ltab" data-ltab="out" style="flex:1;margin-left:3px;font-family:var(--font);">寄出</button>
-        <button class="btn btn-sm ltab" data-ltab="in" style="flex:1;margin-left:3px;font-family:var(--font);">收到</button>
+      <div id="proposal-deny-area" style="display:none;margin-top:12px;">
+        <div class="sec">选择否定原因</div>
+        <div id="deny-reason-opts" class="tw" style="margin-bottom:8px;"></div>
+        <input class="fi" id="deny-custom-reason" placeholder="自定义原因…">
+        <button class="btn btn-p" style="width:100%;margin-top:9px;" id="btn-confirm-deny">确认</button>
       </div>
-      <div id="ltr-write">
-        <div class="sec">给梦角写一封信</div>
-        <textarea class="fta" id="ltr-in" rows="7" placeholder="亲爱的梦角，&#10;&#10;今天想对你说…"></textarea>
-        <div style="font-size:11px;color:var(--text2);margin-top:7px;display:flex;align-items:center;gap:5px;"><i class="fas fa-clock" style="color:var(--accent);"></i> 梦角将在 10～20 小时后回信（随机抽取 10～20 句字卡）</div>
-      </div>
-      <div id="ltr-out" style="display:none;"></div>
-      <div id="ltr-in-box" style="display:none;"></div>
-    </div>
-    <div class="m-foot" id="ltr-foot">
-      <button class="btn btn-g" style="flex:1;" data-close="ov-letter">取消</button>
-      <button class="btn btn-p" style="flex:1;" id="btn-send-ltr">寄出 ✉️</button>
-    </div>
-  </div>
-</div>
-
-<!-- LETTER VIEW -->
-<div class="ov center" id="ov-ltr-view">
-  <div class="modal">
-    <div class="m-head"><span class="m-title" id="lv-title">信件</span><button class="m-close" data-close="ov-ltr-view">✕</button></div>
-    <div class="m-body">
-      <div style="font-size:11px;color:var(--text2);margin-bottom:9px;" id="lv-meta"></div>
-      <div class="ltr-paper" id="lv-body"></div>
-    </div>
-  </div>
-</div>
-
-<!-- SEARCH -->
-<div class="ov" id="ov-search">
-  <div class="modal">
-    <div class="m-head"><span class="m-title">搜索消息</span><button class="m-close" data-close="ov-search">✕</button></div>
-    <div class="m-body">
-      <div style="display:flex;gap:7px;margin-bottom:7px;">
-        <input class="fi" id="srch-in" placeholder="搜索内容…" style="flex:1;">
-        <input type="date" class="fi" id="srch-date" style="width:135px;">
-      </div>
-      <button class="btn btn-p btn-sm" id="btn-do-srch">搜索</button>
-      <div id="srch-results" style="margin-top:11px;"></div>
     </div>
   </div>
 </div>
@@ -688,8 +783,20 @@ input[type=file]{display:none;}
     <div class="m-head"><span class="m-title" id="edit-ttl">编辑</span><button class="m-close" data-close="ov-edit">✕</button></div>
     <div class="m-body"><input class="fi" id="edit-in" placeholder=""></div>
     <div class="m-foot">
-      <button class="btn btn-g" style="flex:1;" data-close="ov-edit">取消</button>
-      <button class="btn btn-p" style="flex:1;" id="btn-save-edit">保存</button>
+      <button class="btn btn-g flex1" data-close="ov-edit">取消</button>
+      <button class="btn btn-p flex1" id="btn-save-edit">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="ov center" id="ov-confirm">
+  <div class="modal">
+    <div class="m-head"><span class="m-title" id="confirm-ttl">确认</span></div>
+    <div class="m-body"><div id="confirm-msg" style="font-size:13px;color:var(--text);line-height:1.6;"></div></div>
+    <div class="m-foot">
+      <button class="btn btn-g flex1" id="btn-confirm-no">取消</button>
+      <button class="btn btn-d flex1" id="btn-confirm-yes">确认删除</button>
     </div>
   </div>
 </div>
