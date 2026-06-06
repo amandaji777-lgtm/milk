@@ -53,6 +53,11 @@ async function load() {
     if (!S.wordcards.groups.find(g => g.id === 'status')) {
       S.wordcards.groups.push({ id:'status', name:'在线状态', builtin:true, cards:[] });
     }
+    // seed default status cards if empty
+    const sg = S.wordcards.groups.find(g => g.id === 'status');
+    if (sg && !sg.cards.length) {
+      ['在线','阅读中','冥想中','休息','忙碌'].forEach(t => sg.cards.push({id:uid(),text:t,disabled:false}));
+    }
   } catch(e) { console.error(e); }
 }
 function save() {
@@ -503,8 +508,9 @@ function viewNote(note) {
 }
 function renderNotesList() {
   const list=document.getElementById('notes-list');
-  if (!S.notes.length) { list.innerHTML='<div class="empty"><i class="fas fa-thumbtack"></i>暂无小纸条</div>'; return; }
-  const sorted=[...S.notes].sort((a,b)=>{ if(a.pinned!==b.pinned) return a.pinned?-1:1; return b.ts-a.ts; });
+  const filtered=S.notes.filter(n=>notesMgrTab==='recv'?n.from==='partner':n.from==='me');
+  if (!filtered.length) { list.innerHTML=`<div class="empty"><i class="fas fa-thumbtack"></i>${notesMgrTab==='recv'?'还没有收到小纸条':'还没有发出小纸条'}</div>`; return; }
+  const sorted=[...filtered].sort((a,b)=>{ if(a.pinned!==b.pinned) return a.pinned?-1:1; return b.ts-a.ts; });
   list.innerHTML='';
   sorted.forEach(n=>{
     const el=document.createElement('div'); el.className=`note-item${!n.read?' unread':''}${n.pinned?' pinned':''}`;
@@ -516,7 +522,11 @@ function renderNotesList() {
     list.appendChild(el);
   });
 }
-function updateNotesBadge() { const u=S.notes.filter(n=>!n.read).length; document.getElementById('note-unread-badge').textContent=u?`(${u}未读)`:''; }
+function updateNotesBadge() { const u=S.notes.filter(n=>!n.read&&n.from==='partner').length; document.getElementById('note-unread-badge').textContent=u?`(${u}未读)`:''; }
+let notesMgrTab='recv';
+function initNotesTabs() {
+  document.querySelectorAll('[data-ntab]').forEach(t=>t.addEventListener('click',()=>{ notesMgrTab=t.dataset.ntab; document.querySelectorAll('[data-ntab]').forEach(x=>x.classList.toggle('on',x.dataset.ntab===notesMgrTab)); renderNotesList(); }));
+}
 
 // ══════════════════════════════════════════════
 // ENVELOPES
@@ -534,14 +544,10 @@ function switchEnvTab(tab) {
 document.getElementById('env-tab-row').addEventListener('click',e=>{ const t=e.target.closest('.entab'); if(t) switchEnvTab(t.dataset.etab); });
 document.getElementById('btn-send-env').addEventListener('click',()=>{
   const content=document.getElementById('env-in').value.trim(); if(!content) return toast('请写点什么');
-  if (allCards().length<5) return toast('请先至少添加5张字卡');
-  const env={ id:uid(), ts:Date.now(), content, replyAt:Date.now()+(10+Math.random()*10)*3600000, replied:false, replyContent:'', replyTs:null };
+  const env={ id:uid(), ts:Date.now(), content, replied:false, replyContent:'', replyTs:null };
   S.envelopes.push(env); save(); document.getElementById('env-in').value=''; toast('信已寄出 ✉️'); switchEnvTab('sent');
 });
-function checkAndRenderEnvReceived() {
-  S.envelopes.forEach(env=>{ if(!env.replied&&Date.now()>=env.replyAt){ const cards=allCards(); if(!cards.length) return; const count=10+Math.floor(Math.random()*11); const picked=new Set(); while(picked.size<Math.min(count,cards.length)) picked.add(cards[Math.floor(Math.random()*cards.length)]); env.replyContent=[...picked].join('\n'); env.replied=true; env.replyTs=Date.now(); save(); } });
-  renderEnvList('received');
-}
+function checkAndRenderEnvReceived() { renderEnvList('received'); }
 function renderEnvList(type) {
   const container=document.getElementById(type==='sent'?'env-sent':'env-received'); container.innerHTML='';
   const list=S.envelopes.filter(e=>type==='sent'?true:e.replied).sort((a,b)=>b.ts-a.ts);
@@ -550,10 +556,12 @@ function renderEnvList(type) {
     const item=document.createElement('div'); item.className='env-item';
     const preview=env.content.substring(0,45)+(env.content.length>45?'…':'');
     let statusHtml='';
-    if (type==='sent') { statusHtml=!env.replied?`<div class="env-meta" style="color:var(--accent);">约 ${Math.max(0,Math.round((env.replyAt-Date.now())/3600000))} 小时后回信</div>`:`<div class="env-meta" style="color:var(--accent);">已收到回信</div>`; }
+    if (type==='sent') { statusHtml=!env.replied?`<div class="env-meta" style="color:var(--accent);">等待回信中</div><button class="btn btn-p btn-sm" style="margin-top:6px;" data-reply-env="${env.id}">他来回信</button>`:`<div class="env-meta" style="color:var(--accent);">已收到回信</div>`; }
     else { statusHtml=`<div class="env-meta">${new Date(env.replyTs).toLocaleString('zh-CN')}</div>`; }
     item.innerHTML=`<div class="env-title">${type==='sent'?'我写给梦角':'梦角的回信'}</div><div class="env-meta">${preview}</div><div class="env-meta">${new Date(env.ts).toLocaleDateString('zh-CN')}</div>${statusHtml}`;
-    item.addEventListener('click',()=>viewEnv(env,type));
+    item.addEventListener('click',e=>{ if(e.target.closest('[data-reply-env]')) return; viewEnv(env,type); });
+    const replyBtn=item.querySelector('[data-reply-env]');
+    if (replyBtn) replyBtn.addEventListener('click',e=>{ e.stopPropagation(); openEnvReply(env.id); });
     const del=document.createElement('button'); del.className='btn btn-d btn-sm'; del.style.marginTop='6px'; del.textContent='删除';
     del.addEventListener('click',e=>{ e.stopPropagation(); confirm2('确认删除这封信件？',()=>{ S.envelopes=S.envelopes.filter(x=>x.id!==env.id); save(); renderEnvList(type); }); });
     item.appendChild(del); container.appendChild(item);
@@ -561,11 +569,44 @@ function renderEnvList(type) {
 }
 function viewEnv(env,type) {
   const isReply=type==='received';
-  document.getElementById('env-view-title').textContent=isReply?'梦角的回信':'我写给梦角';
+  document.getElementById('env-view-title').textContent=isReply?'收到的回信':'我写的信';
   document.getElementById('env-view-meta').textContent=new Date(isReply?env.replyTs:env.ts).toLocaleString('zh-CN');
   document.getElementById('env-view-body').textContent=isReply?env.replyContent:env.content;
   openOv('ov-env-view');
 }
+
+let erSelectedCards=[], erCurrentGroup=null, erEnvId=null;
+function openEnvReply(envId) {
+  erEnvId=envId; erSelectedCards=[];
+  renderErGroups(); renderErSelected();
+  openOv('ov-env-reply');
+}
+function renderErGroups() {
+  const head=document.getElementById('er-head');
+  head.querySelectorAll('.cp-group-btn').forEach(b=>b.remove());
+  const groups=S.wordcards.groups.filter(g=>g.id!=='status'&&g.cards.filter(c=>!c.disabled).length>0);
+  if (!groups.length) { renderErCards(null); return; }
+  if (!erCurrentGroup||!groups.find(g=>g.id===erCurrentGroup)) erCurrentGroup=groups[0].id;
+  groups.forEach(g=>{ const btn=document.createElement('button'); btn.className='cp-group-btn'+(g.id===erCurrentGroup?' on':''); btn.textContent=g.name; btn.addEventListener('click',()=>{ erCurrentGroup=g.id; renderErGroups(); renderErCards(g.id); }); head.appendChild(btn); });
+  renderErCards(erCurrentGroup);
+}
+function renderErCards(groupId) {
+  const c=document.getElementById('er-cards'); c.innerHTML='';
+  if (!groupId) { c.innerHTML='<div class="empty"><i class="fas fa-layer-group"></i>暂无字卡</div>'; return; }
+  const g=S.wordcards.groups.find(x=>x.id===groupId); if(!g) return;
+  g.cards.filter(c=>!c.disabled).forEach(card=>{ const el=document.createElement('div'); el.className='cp-card'; el.textContent=card.text; el.addEventListener('click',()=>{ erSelectedCards.push(card.text); renderErSelected(); }); c.appendChild(el); });
+}
+function renderErSelected() {
+  const sel=document.getElementById('er-selected'); sel.innerHTML='';
+  erSelectedCards.forEach((txt,i)=>{ const tag=document.createElement('div'); tag.className='cp-sel-tag'; const short=txt.length>12?txt.slice(0,12)+'…':txt; tag.innerHTML=`<span>${short}</span><span style="cursor:pointer;margin-left:3px;" data-ri="${i}">✕</span>`; tag.querySelector('[data-ri]').addEventListener('click',()=>{ erSelectedCards.splice(i,1); renderErSelected(); }); sel.appendChild(tag); });
+}
+document.getElementById('er-send-btn').addEventListener('click',()=>{
+  if (!erSelectedCards.length) return toast('请至少选一张字卡');
+  const env=S.envelopes.find(e=>e.id===erEnvId); if(!env) return;
+  env.replyContent=erSelectedCards.join('\n'); env.replied=true; env.replyTs=Date.now();
+  erSelectedCards=[]; save(); closeOv('ov-env-reply'); toast('回信已发出'); renderEnvList('sent');
+});
+document.getElementById('btn-env-reply-close').addEventListener('click',()=>closeOv('ov-env-reply'));
 
 // ══════════════════════════════════════════════
 // ENERGY STATUS
@@ -577,12 +618,14 @@ function switchEnergyTab(tab) {
   document.getElementById('en-me-tab').style.display=tab==='me'?'':'none';
   document.getElementById('en-pt-tab').style.display=tab==='partner'?'':'none';
   document.getElementById('en-shared-tab').style.display=tab==='shared'?'':'none';
+  document.getElementById('en-presets-tab').style.display=tab==='presets'?'':'none';
   renderEnergyTab(tab);
 }
 document.querySelectorAll('[data-entab]').forEach(t=>t.addEventListener('click',()=>switchEnergyTab(t.dataset.entab)));
 function renderEnergyTab(tab) {
   if (tab==='me') renderEnergyTags('me-en-tags',S.statusOptions.me,S.currentStatus.me);
   else if (tab==='partner') renderEnergyTags('pt-en-tags',S.statusOptions.partner,S.currentStatus.partner);
+  else if (tab==='presets') renderStatusPresets();
   else renderSharedTab();
 }
 function renderEnergyTags(cid,options,selected) {
@@ -678,8 +721,10 @@ function renderGroupList() {
   S.wordcards.groups.forEach(g=>{
     if (g.id==='status') return; // shown in advanced directly
     const item=document.createElement('div'); item.className='group-item';
-    item.innerHTML=`<div class="gi-left"><div class="gi-name">${g.name}${g.builtin?'<span style="font-size:10px;color:var(--text2);"> 内置</span>':''}</div><div class="gi-count">${g.cards.length} 张，${g.cards.filter(c=>!c.disabled).length} 启用</div></div><div class="gi-right">${!g.builtin?`<button class="icon-btn" data-del-group="${g.id}"><i class="fas fa-trash"></i></button>`:''}<i class="fas fa-chevron-right" style="color:var(--text2);font-size:12px;"></i></div>`;
-    item.addEventListener('click',e=>{ if(e.target.closest('[data-del-group]')) return; openGroupEdit(g.id,'ov-wordcards'); });
+    item.innerHTML=`<div class="gi-left"><div class="gi-name">${g.name}</div><div class="gi-count">${g.cards.length} 张，${g.cards.filter(c=>!c.disabled).length} 启用</div></div><div class="gi-right"><button class="icon-btn" data-rename-group="${g.id}" title="重命名"><i class="fas fa-pen"></i></button>${!g.builtin?`<button class="icon-btn" data-del-group="${g.id}"><i class="fas fa-trash"></i></button>`:''}<i class="fas fa-chevron-right" style="color:var(--text2);font-size:12px;"></i></div>`;
+    item.addEventListener('click',e=>{ if(e.target.closest('[data-del-group]')||e.target.closest('[data-rename-group]')) return; openGroupEdit(g.id,'ov-wordcards'); });
+    const renBtn=item.querySelector('[data-rename-group]');
+    if (renBtn) renBtn.addEventListener('click',e=>{ e.stopPropagation(); openEditModal('重命名分组',g.name,val=>{ g.name=val; save(); renderGroupList(); }); });
     const delBtn=item.querySelector('[data-del-group]');
     if (delBtn) delBtn.addEventListener('click',e=>{ e.stopPropagation(); confirm2(g.cards.length?`该分组有 ${g.cards.length} 张字卡，删除后不可恢复，确认？`:'确认删除该分组？',()=>{ S.wordcards.groups=S.wordcards.groups.filter(x=>x.id!==g.id); save(); renderGroupList(); }); });
     list.appendChild(item);
@@ -882,7 +927,7 @@ async function init() {
   document.querySelectorAll('.c-dot').forEach(d=>d.classList.toggle('on',d.dataset.c===s.accent));
   document.getElementById('bbl-css-in').value=s.bubbleCSS||'';
   // render all
-  renderMessages(); renderGroupList(); renderNotesList(); updateNotesBadge(); renderStatusPresets(); renderKaomojiList(); renderStickerMgr();
+  renderMessages(); renderGroupList(); renderNotesList(); updateNotesBadge(); renderKaomojiList(); renderStickerMgr(); initNotesTabs();
   // envelope check
   checkAndRenderEnvReceived();
   setInterval(()=>{ S.envelopes.forEach(env=>{ if(!env.replied&&Date.now()>=env.replyAt) checkAndRenderEnvReceived(); }); },5*60*1000);

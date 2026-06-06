@@ -418,8 +418,8 @@ input[type=file]{display:none;}
 <!-- ════ MODALS ════ -->
 
 <!-- SETTINGS -->
-<div class="ov" id="ov-settings">
-  <div class="modal">
+<div class="ov center" id="ov-settings">
+  <div class="modal" style="max-width:460px;">
     <div class="m-head"><span class="m-title">设置</span><button class="m-close" data-close="ov-settings">✕</button></div>
     <div class="m-body">
       <div class="sg">
@@ -539,10 +539,8 @@ input[type=file]{display:none;}
     <div class="m-body">
       <div class="sg">
         <div class="sc" data-open="ov-wordcards"><i class="fas fa-layer-group"></i><span>字卡管理</span></div>
-        <div class="sc" id="sc-online-status"><i class="fas fa-circle-dot"></i><span>在线状态词</span></div>
-        <div class="sc" data-open="ov-kaomoji-mgr"><i class="fas fa-face-smile"></i><span>颜文字</span></div>
+        <div class="sc" id="sc-online-status"><i class="fas fa-circle-dot"></i><span>状态</span></div>
         <div class="sc" data-open="ov-sticker-mgr"><i class="fas fa-images"></i><span>表情包</span></div>
-        <div class="sc" data-open="ov-status-mgr"><i class="fas fa-circle-dot"></i><span>能量预设</span></div>
       </div>
     </div>
   </div>
@@ -669,7 +667,13 @@ input[type=file]{display:none;}
       <span class="m-title">小纸条 <span id="note-unread-badge" style="font-size:11px;color:var(--accent);"></span></span>
       <button class="m-close" data-close="ov-notes-mgr">✕</button>
     </div>
-    <div class="m-body" id="notes-list"></div>
+    <div class="m-body">
+      <div class="entab-row" id="note-tab-row">
+        <button class="entab on" data-ntab="recv">收到的</button>
+        <button class="entab" data-ntab="sent">我发出的</button>
+      </div>
+      <div id="notes-list"></div>
+    </div>
   </div>
 </div>
 
@@ -679,8 +683,8 @@ input[type=file]{display:none;}
     <div class="m-head"><span class="m-title">📌 递小纸条</span><button class="m-close" data-close="ov-note-send">✕</button></div>
     <div class="m-body">
       <div style="display:flex;gap:7px;margin-bottom:9px;">
-        <div class="note-sb on" id="nsb-me" data-s="me">我发</div>
-        <div class="note-sb" id="nsb-pt" data-s="partner">梦角发</div>
+        <div class="note-sb on" id="nsb-me" data-s="me">我发出</div>
+        <div class="note-sb" id="nsb-pt" data-s="partner">收到（他发来）</div>
       </div>
       <textarea class="fta" id="note-in" rows="4" placeholder="想说的话…（最多200字）" maxlength="200"></textarea>
       <div style="margin-top:8px;display:flex;gap:7px;align-items:center;">
@@ -723,9 +727,9 @@ input[type=file]{display:none;}
         <button class="entab" data-etab="received">收到</button>
       </div>
       <div id="env-write">
-        <div class="sec">给梦角写信（不进入聊天记录）</div>
-        <textarea class="fta" id="env-in" rows="8" placeholder="亲爱的梦角，&#10;&#10;今天想对你说…"></textarea>
-        <div style="font-size:11px;color:var(--text2);margin-top:6px;"><i class="fas fa-clock" style="color:var(--accent);"></i> 梦角将在 10～20 小时后回信</div>
+        <div class="sec">写信（不进入聊天记录）</div>
+        <textarea class="fta" id="env-in" rows="8" placeholder="亲爱的爱人，&#10;&#10;"></textarea>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px;"><i class="fas fa-clock" style="color:var(--accent);"></i> 他阅读后将手动选择字卡回信</div>
         <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-send-env">寄出 ✉️</button>
       </div>
       <div id="env-sent" style="display:none;"></div>
@@ -752,8 +756,9 @@ input[type=file]{display:none;}
     <div class="m-body">
       <div class="entab-row">
         <button class="entab on" data-entab="me">我的</button>
-        <button class="entab" data-entab="partner">梦角</button>
+        <button class="entab" data-entab="partner">他的</button>
         <button class="entab" data-entab="shared">我们</button>
+        <button class="entab" data-entab="presets">预设</button>
       </div>
       <div id="en-me-tab">
         <div class="sec">选择当前状态（可多选）</div>
@@ -762,7 +767,7 @@ input[type=file]{display:none;}
         <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-save-me-en">保存</button>
       </div>
       <div id="en-pt-tab" style="display:none;">
-        <div class="sec">选择梦角当前状态（可多选）</div>
+        <div class="sec">选择他当前状态（可多选）</div>
         <div id="pt-en-tags" class="tw"></div>
         <input class="fi mt8" id="pt-en-custom" placeholder="自定义状态…">
         <button class="btn btn-p" style="width:100%;margin-top:10px;" id="btn-save-pt-en">保存</button>
@@ -779,6 +784,13 @@ input[type=file]{display:none;}
         <div class="dv" style="margin-top:13px;"></div>
         <div class="sec">历史记录</div>
         <div id="shared-history"></div>
+      </div>
+      <div id="en-presets-tab" style="display:none;">
+        <div class="fg"><div class="sec">我的预设</div><div style="display:flex;gap:7px;margin-bottom:7px;"><input class="fi" id="new-my-st" placeholder="例：元气满满" style="flex:1;"><button class="btn btn-p btn-sm" id="btn-add-my-st">+</button></div><div id="my-st-list"></div></div>
+        <div class="dv"></div>
+        <div class="fg"><div class="sec">他的预设</div><div style="display:flex;gap:7px;margin-bottom:7px;"><input class="fi" id="new-pt-st" placeholder="例：临在" style="flex:1;"><button class="btn btn-p btn-sm" id="btn-add-pt-st">+</button></div><div id="pt-st-list"></div></div>
+        <div class="dv"></div>
+        <div class="fg"><div class="sec">共同状态预设</div><div style="display:flex;gap:7px;margin-bottom:7px;"><input class="fi" id="new-rel-st" placeholder="例：稳定共存期" style="flex:1;"><button class="btn btn-p btn-sm" id="btn-add-rel-st">+</button></div><div id="rel-st-list"></div></div>
       </div>
     </div>
   </div>
@@ -801,6 +813,21 @@ input[type=file]{display:none;}
         <input class="fi" id="deny-custom-reason" placeholder="自定义原因…">
         <button class="btn btn-p" style="width:100%;margin-top:9px;" id="btn-confirm-deny">确认</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ENVELOPE REPLY (梦角手动选卡回信) -->
+<div class="ov" id="ov-env-reply">
+  <div class="modal">
+    <div class="m-head"><span class="m-title">✉️ 回信（选择字卡）</span><button class="m-close" id="btn-env-reply-close">✕</button></div>
+    <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;" id="er-head">
+      <span style="font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap;flex-shrink:0;">选卡回信</span>
+    </div>
+    <div id="er-cards" style="flex:1;overflow-y:auto;padding:7px 10px;display:flex;flex-direction:column;gap:5px;max-height:220px;"></div>
+    <div style="display:flex;gap:6px;padding:6px 10px;border-top:1px solid var(--border);flex-shrink:0;align-items:center;">
+      <div id="er-selected" style="display:flex;gap:5px;flex:1;flex-wrap:wrap;overflow:hidden;"></div>
+      <button class="btn btn-p btn-sm" id="er-send-btn">确认回信</button>
     </div>
   </div>
 </div>
