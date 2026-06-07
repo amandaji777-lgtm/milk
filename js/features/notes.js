@@ -6,13 +6,15 @@
     let currentNoteDetailId = null;
     let noteImageData = null;
 
+    const NOTES_KEY = (window.APP_PREFIX || 'CHAT_APP_V3_') + 'notesData';
+
     async function loadNotes() {
-        const saved = await localforage.getItem(getStorageKey('notesData'));
+        const saved = await localforage.getItem(NOTES_KEY);
         if (saved && Array.isArray(saved)) notesData = saved;
     }
 
     function saveNotes() {
-        localforage.setItem(getStorageKey('notesData'), notesData);
+        localforage.setItem(NOTES_KEY, notesData);
     }
 
     function updateNotesBadge() {

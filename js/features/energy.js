@@ -20,8 +20,10 @@
 
     let currentEnergyTab = 'my';
 
+    const ENERGY_KEY = (window.APP_PREFIX || 'CHAT_APP_V3_') + 'energyData';
+
     async function loadEnergy() {
-        const saved = await localforage.getItem(getStorageKey('energyData'));
+        const saved = await localforage.getItem(ENERGY_KEY);
         if (saved) energyData = Object.assign({
             partnerTags: [...DEFAULT_PARTNER_TAGS],
             summaries: [], timeline: [],
@@ -32,7 +34,7 @@
         }, saved);
     }
 
-    function saveEnergy() { localforage.setItem(getStorageKey('energyData'), energyData); }
+    function saveEnergy() { localforage.setItem(ENERGY_KEY, energyData); }
 
     function fmtTime(ts) {
         if (!ts) return '';
