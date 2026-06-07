@@ -353,7 +353,7 @@
             const inp = document.getElementById('propose-content-input');
             const content = inp ? inp.value.trim() : '';
             if (!content) { if (typeof showNotification === 'function') showNotification('请输入提议内容', 'warning'); return; }
-            const resolveHours = 2 + Math.random() * 10;
+            const resolveHours = 2 + Math.random() * 3;
             energyData.pendingProposal = { id: 'prop_' + Date.now(), content, options: [...(window._proposeOptions || [])], from: 'me', ts: Date.now(), resolveAt: Date.now() + resolveHours * 3600000 };
             pushTimeline('proposal', `我发起提议：将状态改为「${content}」`);
             saveEnergy();

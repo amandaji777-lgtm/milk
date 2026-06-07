@@ -526,7 +526,7 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 customStatuses = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
                 if (typeof getStorageKey === 'function') localforage.setItem(getStorageKey('customStatuses'), customStatuses);
                 if (typeof showNotification === 'function') showNotification('在线状态词库已保存', 'success');
-                textarea.value = '';
+                textarea.value = customStatuses.join('\n');
                 renderOnlineStatusPreview();
             });
 

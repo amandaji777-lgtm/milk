@@ -424,8 +424,7 @@ const LIBRARY_CONFIG = {
         title: "回复库管理",
         tabs: [
             { id: 'custom', name: '主字卡', mode: 'list' },
-            { id: 'emojis', name: 'Emoji', mode: 'grid' },
-            { id: 'stickers', name: '表情库', mode: 'grid' }
+            { id: 'emojis', name: 'Emoji', mode: 'grid' }
         ]
     },
     atmosphere: {
@@ -447,11 +446,11 @@ window.openMyStickerSettings = function() {
     const picker = document.getElementById('user-sticker-picker');
     if (picker) picker.classList.remove('active');
     if (typeof currentMajorTab !== 'undefined') {
-        currentMajorTab = 'reply';
+        currentMajorTab = 'stickers';
         currentSubTab = 'stickers';
     }
     var sidebarBtns = document.querySelectorAll('.sidebar-btn');
-    sidebarBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.major === 'reply'); });
+    sidebarBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.major === 'stickers'); });
     if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
     var modal = document.getElementById('custom-replies-modal');
     if (modal && typeof showModal === 'function') showModal(modal);
