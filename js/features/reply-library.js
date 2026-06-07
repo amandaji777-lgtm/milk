@@ -129,8 +129,6 @@ function _renderListContentOnly() {
         else if (currentSubTab === 'statuses') itemsToRender = customStatuses;
         else if (currentSubTab === 'mottos') itemsToRender = customMottos;
         else if (currentSubTab === 'intros') itemsToRender = customIntros;
-    } else if (currentMajorTab === 'stickers') {
-        if (currentSubTab === 'stickers') { itemsToRender = stickerLibrary; renderType = 'image'; }
     }
 
     if (renderType === 'emoji') { _renderEmojiTab(list, itemsToRender); return; }
@@ -218,8 +216,6 @@ function renderReplyLibrary() {
         else if (currentSubTab === 'statuses') itemsToRender = customStatuses;
         else if (currentSubTab === 'mottos') itemsToRender = customMottos;
         else if (currentSubTab === 'intros') itemsToRender = customIntros;
-    } else if (currentMajorTab === 'stickers') {
-        if (currentSubTab === 'stickers') { itemsToRender = stickerLibrary; renderType = 'image'; }
     }
 
     if (renderType === 'emoji') { _renderEmojiTab(list, itemsToRender); return; }
@@ -243,7 +239,7 @@ function renderReplyLibrary() {
 function _renderModernToolbar() {
     let toolbar = document.getElementById('batch-ops-toolbar');
     const isMainCustom = currentMajorTab === 'reply' && currentSubTab === 'custom';
-    const isStickersTab = (currentMajorTab === 'reply' || currentMajorTab === 'stickers') && currentSubTab === 'stickers';
+    const isStickersTab = currentMajorTab === 'reply' && currentSubTab === 'stickers';
     const canBatch = isMainCustom || isStickersTab;
 
     if (!toolbar) {
@@ -843,7 +839,7 @@ function _renderStickerTab(list, itemsToRender) {
         `;
         div.addEventListener('click', () => {
             if (!_batchModeActive) return;
-            if (currentSubTab !== 'stickers') return;
+            if (currentMajorTab !== 'reply' || currentSubTab !== 'stickers') return;
             if (isSelected) _batchSelectedIndices.delete(index);
             else _batchSelectedIndices.add(index);
             renderReplyLibrary();

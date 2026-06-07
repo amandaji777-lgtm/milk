@@ -477,82 +477,6 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 showModal(DOMElements.advancedModal.modal);
             });
 
-            // 高级设置内的子项
-            document.getElementById('custom-replies-function')?.addEventListener('click', () => {
-                hideModal(DOMElements.advancedModal.modal);
-                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'reply'; currentSubTab = 'custom'; }
-                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'reply'));
-                showModal(document.getElementById('custom-replies-modal'));
-                if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
-            });
-
-            document.getElementById('emoji-mgr-function')?.addEventListener('click', () => {
-                hideModal(DOMElements.advancedModal.modal);
-                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'stickers'; currentSubTab = 'stickers'; }
-                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'stickers'));
-                showModal(document.getElementById('custom-replies-modal'));
-                if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
-            });
-
-            document.getElementById('status-mgr-function')?.addEventListener('click', () => {
-                hideModal(DOMElements.advancedModal.modal);
-                const textarea = document.getElementById('online-status-textarea');
-                if (textarea && typeof customStatuses !== 'undefined') {
-                    textarea.value = customStatuses.join('\n');
-                }
-                showModal(document.getElementById('online-status-modal'));
-                setTimeout(() => { if (typeof renderOnlineStatusPreview === 'function') renderOnlineStatusPreview(); }, 50);
-            });
-
-            function renderOnlineStatusPreview() {
-                const list = document.getElementById('online-status-preview-list');
-                if (!list) return;
-                const statuses = typeof customStatuses !== 'undefined' ? customStatuses : [];
-                if (!statuses.length) { list.style.display = 'none'; return; }
-                list.style.display = 'flex';
-                list.innerHTML = statuses.map(s => `
-                    <div style="padding:9px 14px;background:var(--primary-bg);border-radius:10px;border:1px solid var(--border-color);font-size:13px;color:var(--text-primary);">${s}</div>
-                `).join('');
-            }
-
-            document.getElementById('back-online-status')?.addEventListener('click', () => {
-                hideModal(document.getElementById('online-status-modal'));
-                showModal(DOMElements.advancedModal.modal);
-            });
-
-            document.getElementById('save-online-status')?.addEventListener('click', () => {
-                const textarea = document.getElementById('online-status-textarea');
-                if (!textarea) return;
-                customStatuses = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
-                if (typeof getStorageKey === 'function') localforage.setItem(getStorageKey('customStatuses'), customStatuses);
-                if (typeof showNotification === 'function') showNotification('在线状态词库已保存', 'success');
-                textarea.value = customStatuses.join('\n');
-                renderOnlineStatusPreview();
-            });
-
-            const _envelopeSettingsEl = document.getElementById('envelope-settings');
-            if (_envelopeSettingsEl) _envelopeSettingsEl.addEventListener('click', () => {
-                hideModal(DOMElements.settingsModal.modal);
-                showModal(document.getElementById('envelope-modal'));
-            });
-
-            const _notesSettingsEl = document.getElementById('notes-settings');
-            if (_notesSettingsEl) _notesSettingsEl.addEventListener('click', () => {
-                hideModal(DOMElements.settingsModal.modal);
-                showModal(document.getElementById('notes-modal'));
-            });
-
-            document.getElementById('back-notes-modal')?.addEventListener('click', () => {
-                hideModal(document.getElementById('notes-modal'));
-                showModal(DOMElements.settingsModal.modal);
-            });
-
-            const _energySettingsEl = document.getElementById('energy-settings');
-            if (_energySettingsEl) _energySettingsEl.addEventListener('click', () => {
-                hideModal(DOMElements.settingsModal.modal);
-                showModal(document.getElementById('mood-modal'));
-            });
-
             const _dataSettingsEl = document.getElementById('data-settings');
             if (_dataSettingsEl) _dataSettingsEl.addEventListener('click', () => {
                 hideModal(DOMElements.settingsModal.modal);
@@ -1362,7 +1286,6 @@ if (_sendEnvEl) _sendEnvEl.addEventListener('click', handleSendEnvelope);
 const _cancelEnvEl = document.getElementById('cancel-envelope');
 if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
     hideModal(document.getElementById('envelope-modal'));
-    showModal(DOMElements.settingsModal.modal);
 });
             const closeFortune = document.getElementById('close-fortune');
             if (closeFortune) {

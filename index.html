@@ -27,13 +27,6 @@
 }
 </style>
     <style id="css-live-preview-style"></style>
-<style>
-@media (max-width: 600px) {
-    .modal-sidebar { overflow-x: auto; justify-content: flex-start !important; }
-    .sidebar-btn { min-width: 80px !important; padding: 10px 12px !important; font-size: 12px !important; }
-    .sidebar-btn i { font-size: 15px !important; }
-}
-</style>
 </head>
 <body>
 
@@ -89,6 +82,7 @@
                 </div>
             </div>
             <div class="header-actions">
+                <button id="session-manager-btn" class="action-btn" title="会话管理"><i class="fas fa-comments"></i></button>
                 <button id="daily-greeting-btn" class="action-btn" title="今日公告" onclick="reopenDailyGreeting()"><i class="fas fa-newspaper"></i></button>
                 <button id="settings-btn" class="action-btn" title="设置"><i class="fas fa-cog"></i></button>
             </div>
@@ -198,8 +192,15 @@
     <div class="input-area-wrapper">
         <div class="batch-preview" id="batch-preview"></div>
         <div id="reply-preview-container"></div>
-<!-- 快捷回复已删除 -->
-<div class="modal" id="quick-reply-modal" style="display:none;">
+<div id="quick-reply-bar" style="display:flex;gap:6px;padding:6px 10px 2px;flex-wrap:wrap;align-items:center;">
+    <!-- 动态加载快捷回复按钮 -->
+    <button id="edit-quick-replies-btn" style="padding:4px 10px;border:1px dashed var(--border-color);border-radius:20px;background:var(--primary-bg);color:var(--text-secondary);font-size:11px;cursor:pointer;font-family:var(--font-family);" title="编辑快捷回复">
+        <i class="fas fa-edit"></i> 编辑
+    </button>
+</div>
+
+<!-- 快捷回复编辑弹窗（放在 body 末尾，其他 modal 附近） -->
+<div class="modal" id="quick-reply-modal">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-title">
             <i class="fas fa-bolt"></i><span>自定义快捷回复</span>
@@ -243,9 +244,6 @@
                     </button>
                     <button class="collapsed-extra-btn" id="collapsed-call-btn" title="视频通话" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');if(window.callFeature&&typeof window.callFeature.startCall==='function')window.callFeature.startCall(false);})();">
                         <i class="fas fa-video"></i>
-                    </button>
-                    <button class="collapsed-extra-btn" id="collapsed-note-btn" title="小纸条" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');openWriteNote();})();">
-                        <i class="fas fa-sticky-note"></i>
                     </button>
                     <button class="collapsed-extra-btn" title="退出收纳" onclick="window.exitCollapseMode && window.exitCollapseMode()" style="color:#ff5050; background:rgba(255,80,80,0.1);">
                         <i class="fas fa-times"></i>
@@ -399,7 +397,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 提笔写信
             </button>
-            <button class="env-close-btn" id="cancel-envelope"><i class="fas fa-arrow-left"></i> 返回</button>
+            <button class="env-close-btn" id="cancel-envelope">关闭</button>
         </div>
     </div>
     </div>
@@ -464,56 +462,6 @@
     </div>
 </div>
 
-<!-- 小纸条管理模态框 -->
-<div class="modal" id="notes-modal">
-    <div class="modal-content">
-        <div class="modal-title"><i class="fas fa-sticky-note"></i><span>小纸条管理</span><span id="notes-unread-badge" style="display:none;background:var(--accent-color);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:8px;"></span></div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-            <button class="notes-tab-btn active" data-notes-tab="recv" style="flex:1;padding:7px 0;border-radius:10px;border:1px solid var(--border-color);background:var(--accent-color);color:#fff;font-size:13px;cursor:pointer;">收到的</button>
-            <button class="notes-tab-btn" data-notes-tab="sent" style="flex:1;padding:7px 0;border-radius:10px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:13px;cursor:pointer;">我发出的</button>
-        </div>
-        <div id="notes-list" style="max-height:55vh;overflow-y:auto;"></div>
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-secondary" id="back-notes-modal"><i class="fas fa-arrow-left"></i> 返回</button>
-            <button class="modal-btn modal-btn-secondary" id="close-notes-modal">关闭</button>
-        </div>
-    </div>
-</div>
-
-<!-- 小纸条详情模态框 -->
-<div class="modal" id="note-detail-modal" style="z-index:2100;">
-    <div class="modal-content">
-        <div class="modal-title"><i class="fas fa-sticky-note"></i><span id="note-detail-title">小纸条</span></div>
-        <div id="note-detail-image" style="display:none;margin-bottom:12px;"><img id="note-detail-img" style="max-width:100%;border-radius:10px;"></div>
-        <div id="note-detail-text" style="font-size:14px;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;padding:12px;background:var(--primary-bg);border-radius:10px;min-height:60px;"></div>
-        <div id="note-detail-time" style="font-size:11px;color:var(--text-secondary);margin-top:8px;text-align:right;"></div>
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-secondary" id="delete-note-detail-btn">删除</button>
-            <button class="modal-btn modal-btn-primary" id="close-note-detail-btn">关闭</button>
-        </div>
-    </div>
-</div>
-
-<!-- 写小纸条模态框 -->
-<div class="modal" id="write-note-modal" style="z-index:2100;">
-    <div class="modal-content">
-        <div class="modal-title"><i class="fas fa-pen"></i><span>写小纸条</span></div>
-        <textarea id="write-note-text" class="modal-textarea" placeholder="写下心里话（最多200字）..." maxlength="200" style="min-height:120px;resize:none;"></textarea>
-        <div style="text-align:right;font-size:11px;color:var(--text-secondary);margin-top:4px;"><span id="note-char-count">0</span>/200</div>
-        <div style="margin-top:10px;">
-            <label style="font-size:13px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-image"></i> 附加图片（可选）
-                <input type="file" id="note-image-input" accept="image/*" style="display:none;">
-            </label>
-            <div id="note-image-preview" style="display:none;margin-top:8px;"><img id="note-preview-img" style="max-width:100%;max-height:120px;border-radius:8px;"><button id="remove-note-image" style="display:block;margin-top:4px;background:none;border:none;color:var(--text-secondary);font-size:12px;cursor:pointer;">移除图片</button></div>
-        </div>
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-secondary" id="cancel-write-note">取消</button>
-            <button class="modal-btn modal-btn-primary" id="send-note-btn">发送</button>
-        </div>
-    </div>
-</div>
-
     <div class="modal" id="settings-modal">
         <div class="modal-content">
             <div class="modal-title">
@@ -521,25 +469,21 @@
             </div>
 
             <div class="settings-grid">
-                <div class="settings-card" id="advanced-settings">
-                    <i class="fas fa-tools"></i>
-                    <span>高级设置</span>
-                </div>
                 <div class="settings-card" id="appearance-settings">
                     <i class="fas fa-palette"></i>
-                    <span>美化功能</span>
+                    <span>外观设置</span>
                 </div>
-                <div class="settings-card" id="notes-settings">
-                    <i class="fas fa-sticky-note"></i>
-                    <span>小纸条管理</span>
+                <div class="settings-card" id="chat-settings">
+                    <i class="fas fa-comments"></i>
+                    <span>聊天设置</span>
                 </div>
-                <div class="settings-card" id="envelope-settings">
-                    <i class="fas fa-envelope"></i>
-                    <span>信封管理</span>
+                <div class="settings-card" id="advanced-settings">
+                    <i class="fas fa-tools"></i>
+                    <span>高级功能</span>
                 </div>
-                <div class="settings-card" id="energy-settings">
-                    <i class="fas fa-bolt"></i>
-                    <span>能量状态</span>
+                <div class="settings-card" id="data-settings">
+                    <i class="fas fa-database"></i>
+                    <span>数据管理</span>
                 </div>
             </div>
 
@@ -1183,32 +1127,39 @@
 <div class="modal" id="advanced-modal">
         <div class="modal-content">
             <div class="modal-title">
-                <i class="fas fa-tools"></i><span>高级设置</span>
+                <i class="fas fa-tools"></i><span>高级功能</span>
             </div>
+
             <div class="settings-section">
-                <div class="settings-section-title"><i class="fas fa-cards"></i>字卡自定义</div>
+                <div class="settings-section-title">
+                    <i class="fas fa-magic"></i>实用工具
+                </div>
                 <div class="settings-item-list">
                     <div class="settings-item" id="custom-replies-function">
-                        <i class="fas fa-comment-dots"></i><span>字卡管理</span>
+                        <i class="fas fa-comment-dots"></i><span>自定义回复</span>
+                    </div>
+                    <div class="settings-item" id="stats-function">
+                        <i class="fas fa-chart-bar"></i><span>消息统计</span>
+                    </div>
+                    <div class="settings-item" id="decision-function">
+                        <i class="fas fa-balance-scale"></i> 
+                        <span>抉择</span> 
+                    </div>
+                    <div class="settings-item" id="fortune-lenormand-function" style="position:relative;">
+                        <i class="fas fa-star-and-crescent"></i><span>运势 · 占卜</span>
+                    </div>
+                    <div class="settings-item" id="anniversary-function">
+                        <i class="fas fa-heart"></i><span>重要日</span>
+                    </div>
+                    <div class="settings-item" id="mood-function">
+                        <i class="fas fa-calendar-day"></i><span>心晴手账</span>
+                    </div>
+                    <div class="settings-item" id="envelope-function">
+                        <i class="fas fa-envelope"></i><span>信封投递</span>
                     </div>
                 </div>
             </div>
-            <div class="settings-section">
-                <div class="settings-section-title"><i class="fas fa-smile"></i>表情库管理</div>
-                <div class="settings-item-list">
-                    <div class="settings-item" id="emoji-mgr-function">
-                        <i class="fas fa-laugh-beam"></i><span>表情库</span>
-                    </div>
-                </div>
-            </div>
-            <div class="settings-section">
-                <div class="settings-section-title"><i class="fas fa-wifi"></i>状态管理</div>
-                <div class="settings-item-list">
-                    <div class="settings-item" id="status-mgr-function">
-                        <i class="fas fa-circle"></i><span>在线状态词库</span>
-                    </div>
-                </div>
-            </div>
+
             <div class="modal-buttons" style="position:sticky;bottom:0;background:var(--secondary-bg);border-top:1px solid var(--border-color);padding:12px 0 0;z-index:10;margin-top:8px;margin-left:-24px;margin-right:-24px;padding-left:24px;padding-right:24px;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px));">
                 <button class="modal-btn modal-btn-secondary" id="back-advanced" onclick="(function(){hideModal(document.getElementById('advanced-modal'));showModal(document.getElementById('settings-modal'))})()">
                     <i class="fas fa-arrow-left"></i> 返回
@@ -1388,175 +1339,53 @@
 
     <div class="modal" id="mood-modal">
        <div class="modal-content">
-        <div class="modal-title">
-            <i class="fas fa-bolt"></i><span>能量状态</span>
-            <span id="energy-badge" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--accent-color);margin-left:8px;display:inline-block;"></span>
-        </div>
-
-        <!-- 3-tab bar -->
-        <div style="display:flex;gap:4px;margin-bottom:14px;background:var(--secondary-bg);border-radius:12px;padding:4px;">
-            <button class="energy-tab-btn active" data-energy-tab="my" style="flex:1;padding:7px 0;border-radius:9px;border:none;background:var(--accent-color);color:#fff;font-size:12px;cursor:pointer;transition:all 0.2s;">我的状态</button>
-            <button class="energy-tab-btn" data-energy-tab="partner" style="flex:1;padding:7px 0;border-radius:9px;border:none;background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all 0.2s;">他的状态</button>
-            <button class="energy-tab-btn" data-energy-tab="our" style="flex:1;padding:7px 0;border-radius:9px;border:none;background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all 0.2s;">我们的状态</button>
-        </div>
-
-        <!-- 我的状态 tab -->
-        <div id="energy-tab-my" class="energy-tab-panel" style="max-height:55vh;overflow-y:auto;">
-            <div style="background:var(--primary-bg);border-radius:12px;padding:12px;margin-bottom:10px;">
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">当前状态</div>
-                <div id="my-energy-display" style="font-size:14px;color:var(--text-primary);min-height:20px;">（未设置）</div>
-                <div id="my-energy-time" style="font-size:11px;color:var(--text-secondary);margin-top:4px;"></div>
-                <button id="edit-my-energy-btn" style="margin-top:8px;background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">编辑</button>
+        <div class="mood-header-actions">
+            <div class="modal-title" style="margin-bottom:0; border:none; padding:0;">
+                <i class="fas fa-book-open"></i><span>心晴手帐</span>
             </div>
-            <div style="background:var(--primary-bg);border-radius:12px;padding:12px;">
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:8px;">修改记录</div>
-                <div id="my-energy-history-list"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="view-switch-btn active" id="btn-view-calendar">
+                    <i class="fas fa-calendar-alt"></i> 日历
+                </button>
+                <button class="view-switch-btn" id="btn-view-stats">
+                    <i class="fas fa-chart-pie"></i> 统计
+                </button>
+                <button class="view-switch-btn" id="btn-view-trash">
+                    <i class="fas fa-recycle"></i> 回收站
+                </button>
             </div>
         </div>
-
-        <!-- 他的状态 tab -->
-        <div id="energy-tab-partner" class="energy-tab-panel" style="display:none;max-height:55vh;overflow-y:auto;">
-            <div style="background:var(--primary-bg);border-radius:12px;padding:12px;margin-bottom:10px;">
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">当前状态</div>
-                <div id="partner-energy-display" style="font-size:14px;color:var(--text-primary);min-height:20px;">（未设置）</div>
-                <div id="partner-energy-time" style="font-size:11px;color:var(--text-secondary);margin-top:4px;"></div>
+        <div id="mood-calendar-view" class="mood-view-section">
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                <div class="current-month-label" id="calendar-month-label">--</div>
+                <button class="calendar-nav-btn" id="next-month"><i class="fas fa-chevron-right"></i></button>
             </div>
-            <div style="background:var(--primary-bg);border-radius:12px;padding:12px;margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                    <span style="font-size:11px;color:var(--text-secondary);font-weight:600;">状态标签库</span>
-                    <button id="toggle-partner-tags-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:3px 10px;font-size:11px;color:var(--text-secondary);cursor:pointer;">管理</button>
-                </div>
-                <div id="partner-tags-manager" style="display:none;padding-top:6px;">
-                    <div id="partner-tags-inline-list" style="max-height:160px;overflow-y:auto;"></div>
-                    <div style="display:flex;gap:6px;margin-top:8px;">
-                        <input type="text" id="new-partner-tag-input" placeholder="添加新标签..." maxlength="20" style="flex:1;padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:var(--primary-bg);color:var(--text-primary);outline:none;">
-                        <button id="add-partner-tag-btn" style="background:var(--accent-color);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:13px;cursor:pointer;">+</button>
-                    </div>
-                </div>
+            <div class="calendar-weekdays">
+                <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
             </div>
-            <div style="background:var(--primary-bg);border-radius:12px;padding:12px;">
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:8px;">状态记录</div>
-                <div id="partner-energy-history-list"></div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+    
+        <div id="mood-stats-view" class="mood-view-section hidden-view">
+            <div id="mood-stats-container" class="mood-stats-card" style="border:none; box-shadow:none; padding:0; background:transparent;">
             </div>
         </div>
 
-        <!-- 我们的状态 tab -->
-        <div id="energy-tab-our" class="energy-tab-panel" style="display:none;max-height:55vh;overflow-y:auto;">
-            <div style="background:var(--primary-bg);border-radius:12px;padding:12px;">
-                <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">当前状态</div>
-                <div id="our-energy-display" style="font-size:14px;color:var(--text-primary);min-height:20px;">（未设置）</div>
-                <div id="our-energy-time" style="font-size:11px;color:var(--text-secondary);margin-top:4px;"></div>
-                <div id="pending-proposal-notice" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(var(--accent-color-rgb),0.1);border-radius:8px;font-size:12px;color:var(--accent-color);"></div>
-                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-                    <button id="propose-energy-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">发起提议</button>
-                    <button id="write-summary-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">写总结</button>
-                    <button id="view-timeline-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">时间轴</button>
-                </div>
-                <div id="recent-summary-box" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(var(--accent-color-rgb),0.06);border-radius:8px;">
-                    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">最近总结</div>
-                    <div id="recent-summary-text" style="font-size:13px;color:var(--text-primary);"></div>
-                    <div id="recent-summary-reply" style="font-size:12px;color:var(--text-secondary);margin-top:4px;font-style:italic;"></div>
-                </div>
-            </div>
+        <div id="mood-trash-view" class="mood-view-section hidden-view">
+            <div id="mood-trash-list" style="padding:0 14px;"></div>
         </div>
-
+    
         <div class="modal-buttons">
-            <button class="modal-btn modal-btn-secondary" id="back-mood"><i class="fas fa-arrow-left"></i> 返回</button>
+            <button class="modal-btn modal-btn-secondary" id="mood-export-btn" style="flex:1;">导出</button>
+            <button class="modal-btn modal-btn-secondary" id="mood-import-btn" style="flex:1;">导入</button>
+            <input type="file" id="mood-import-file-input" accept="application/json" style="display:none;">
             <button class="modal-btn modal-btn-secondary" id="close-mood">关闭</button>
         </div>
        </div>
     </div>
 
-    <!-- 编辑我的状态 -->
-    <div class="modal" id="edit-my-energy-modal" style="z-index:2100;">
-        <div class="modal-content">
-            <div class="modal-title"><i class="fas fa-pen"></i><span>编辑我的状态</span></div>
-            <textarea id="my-energy-input" class="modal-textarea" placeholder="描述你现在的状态..." maxlength="100" style="min-height:80px;resize:none;"></textarea>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" id="cancel-my-energy">取消</button>
-                <button class="modal-btn modal-btn-primary" id="save-my-energy">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 我发起提议 -->
-    <div class="modal" id="propose-energy-modal" style="z-index:2100;">
-        <div class="modal-content">
-            <div class="modal-title"><i class="fas fa-paper-plane"></i><span>发起提议</span></div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">提议将我们的状态改为：</div>
-            <input type="text" id="propose-content-input" class="modal-input" placeholder="输入提议的状态内容..." maxlength="50">
-            <div style="font-size:12px;color:var(--text-secondary);margin:10px 0 6px;">自定义选项（他回应时可选）</div>
-            <div id="propose-options-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
-            <div style="display:flex;gap:8px;">
-                <input type="text" id="new-propose-option" class="modal-input" placeholder="添加选项..." maxlength="20" style="flex:1;">
-                <button id="add-propose-option-btn" class="modal-btn modal-btn-primary" style="padding:8px 14px;flex-shrink:0;">+</button>
-            </div>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" id="cancel-propose">取消</button>
-                <button class="modal-btn modal-btn-primary" id="send-propose-btn">发起</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 回应提议 -->
-    <div class="modal" id="respond-proposal-modal" style="z-index:2100;">
-        <div class="modal-content">
-            <div class="modal-title"><i class="fas fa-reply"></i><span>回应提议</span></div>
-            <div style="font-size:13px;color:var(--text-primary);margin-bottom:12px;">提议将状态改为：<strong id="proposal-content-display"></strong></div>
-            <div id="proposal-options-btns" style="display:flex;flex-direction:column;gap:8px;"></div>
-            <div id="other-response-input" style="display:none;margin-top:10px;">
-                <input type="text" id="other-response-text" class="modal-input" placeholder="输入自定义回应内容..." maxlength="50">
-                <div class="modal-buttons" style="margin-top:8px;">
-                    <button class="modal-btn modal-btn-secondary" id="cancel-other-response">取消</button>
-                    <button class="modal-btn modal-btn-primary" id="confirm-other-response">确认</button>
-                </div>
-            </div>
-            <div class="modal-buttons" style="margin-top:10px;">
-                <button class="modal-btn modal-btn-secondary" id="cancel-respond">取消</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 写总结 -->
-    <div class="modal" id="write-summary-modal" style="z-index:2100;">
-        <div class="modal-content">
-            <div class="modal-title"><i class="fas fa-feather-alt"></i><span>写总结</span></div>
-            <textarea id="summary-input" class="modal-textarea" placeholder="写下对当前状态的总结..." maxlength="200" style="min-height:100px;resize:none;"></textarea>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" id="cancel-summary">取消</button>
-                <button class="modal-btn modal-btn-primary" id="save-summary-btn">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 时间轴 -->
-    <div class="modal" id="energy-timeline-modal" style="z-index:2100;">
-        <div class="modal-content">
-            <div class="modal-title"><i class="fas fa-stream"></i><span>状态时间轴</span></div>
-            <div id="energy-timeline-list" style="max-height:60vh;overflow-y:auto;padding:4px 0;"></div>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" id="close-timeline">关闭</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 在线状态词库管理 -->
-    <div class="modal" id="online-status-modal">
-        <div class="modal-content">
-            <div class="modal-title"><i class="fas fa-circle"></i><span>在线状态词库</span></div>
-            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">每行一个状态词，系统会按设定频率随机切换</div>
-            <textarea id="online-status-textarea" class="modal-textarea" placeholder="每行输入一个在线状态词..." style="min-height:140px;resize:vertical;font-size:13px;"></textarea>
-            <div id="online-status-preview-list" style="display:none;margin-top:10px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-secondary" id="back-online-status"><i class="fas fa-arrow-left"></i> 返回</button>
-                <button class="modal-btn modal-btn-primary" id="save-online-status">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 旧mood overlay占位（保持兼容） -->
-    <div id="mood-selector-overlay" style="display:none;"></div>
-    <div style="display:none;" id="_old-mood-hidden">
+    <div class="mood-selector-overlay" id="mood-selector-overlay">
         <div class="mood-selector-card" id="mood-editor-view">
             <h3 id="mood-selector-date">--月--日</h3>
             
@@ -1677,11 +1506,7 @@
                 </button>
                 <button class="sidebar-btn" data-major="atmosphere">
                     <i class="fas fa-magic"></i>
-                    <span>拍一拍</span>
-                </button>
-                <button class="sidebar-btn" data-major="stickers">
-                    <i class="fas fa-laugh-beam"></i>
-                    <span>表情库</span>
+                    <span>氛围感</span>
                 </button>
                 <button class="sidebar-btn" data-major="announcement" onclick="switchToAnnouncementPanel()">
                     <i class="fas fa-newspaper"></i>
@@ -1703,6 +1528,58 @@
 
                 <div id="announcement-panel" style="display:none; padding:0 16px 80px; overflow-y:auto; flex:1; min-height:0; -webkit-overflow-scrolling:touch;">
                     <div style="display:flex;flex-direction:column;gap:12px; padding:4px 0 16px;">
+
+                        <div style="background:linear-gradient(135deg,rgba(var(--accent-color-rgb),0.12),rgba(var(--accent-color-rgb),0.05));border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--accent-color-rgb),0.2);">
+                            <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-color);font-weight:700;margin-bottom:10px;"><i class="fas fa-image" style="margin-right:6px;"></i>卡片内背景图</div>
+                            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;line-height:1.5;">设置公告的背景图</div>
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="document.getElementById('dg-overlay-bg-input').click()" style="flex:1;padding:9px;border:1.5px dashed rgba(var(--accent-color-rgb),0.4);border-radius:10px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-family:var(--font-family);">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    上传卡片背景
+                                </button>
+                                <button onclick="clearDgOverlayBg()" style="padding:9px 14px;border:1px solid var(--border-color);border-radius:10px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-family:var(--font-family);">清除</button>
+                            </div>
+                            <input type="file" id="dg-overlay-bg-input" accept="image/*" style="display:none" onchange="handleDgOverlayBgUpload(this)">
+                            <div id="dg-overlay-bg-preview" style="margin-top:8px;display:none;border-radius:10px;overflow:hidden;position:relative;">
+                                <img id="dg-overlay-bg-preview-img" src="" style="width:100%;max-height:80px;object-fit:cover;display:block;">
+                                <div style="position:absolute;inset:0;background:rgba(0,0,0,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                    <span style="color:#fff;font-size:11px;letter-spacing:1px;">卡片背景预览</span>
+                                </div>
+                            </div>
+                            <div id="dg-overlay-opacity-row" style="display:none;margin-top:10px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+                                    <span style="font-size:11px;color:var(--text-secondary);">蒙层深度 &nbsp;<span style="opacity:0.6;">（0%=图片最清晰）</span></span>
+                                    <span id="dg-overlay-opacity-val" style="font-size:11px;color:var(--accent-color);font-weight:600;">25%</span>
+                                </div>
+                                <input type="range" id="dg-overlay-opacity-slider" min="0" max="80" value="25" style="width:100%;accent-color:var(--accent-color);cursor:pointer;" oninput="onDgOverlayOpacityChange(this.value)">
+                            </div>
+                        </div>
+
+                        <div style="background:linear-gradient(135deg,rgba(var(--accent-color-rgb),0.12),rgba(var(--accent-color-rgb),0.05));border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--accent-color-rgb),0.2);">
+                            <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-color);font-weight:700;margin-bottom:10px;"><i class="fas fa-image" style="margin-right:6px;"></i>顶部背景图</div>
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="document.getElementById('dg-header-img-input').click()" style="flex:1;padding:9px;border:1.5px dashed rgba(var(--accent-color-rgb),0.4);border-radius:10px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-family:var(--font-family);">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    上传顶部背景
+                                </button>
+                                <button onclick="clearDgHeaderBg()" style="padding:9px 14px;border:1px solid var(--border-color);border-radius:10px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-family:var(--font-family);">清除</button>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(var(--accent-color-rgb),0.05);border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--accent-color-rgb),0.12);">
+                            <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-color);font-weight:700;margin-bottom:10px;"><i class="fas fa-image" style="margin-right:6px;"></i>中部装饰图</div>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <button onclick="document.getElementById('dg-deco-img-input').click()" style="flex:1;padding:9px;border:1.5px dashed rgba(var(--accent-color-rgb),0.4);border-radius:10px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-family:var(--font-family);">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    上传装饰图
+                                </button>
+                                <button onclick="clearDgDecoImg()" style="padding:9px 14px;border:1px solid var(--border-color);border-radius:10px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-family:var(--font-family);">清除</button>
+                            </div>
+                            <input type="file" id="dg-deco-img-input" accept="image/*" style="display:none">
+                            <div id="dg-deco-preview" style="margin-top:8px;display:none;border-radius:10px;overflow:hidden;">
+                                <img id="dg-deco-preview-img" src="" style="width:100%;max-height:100px;object-fit:cover;display:block;">
+                            </div>
+                        </div>
 
                         <div style="background:rgba(var(--accent-color-rgb),0.05);border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--accent-color-rgb),0.12);">
                             <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-color);font-weight:700;margin-bottom:10px;"><i class="fas fa-edit" style="margin-right:6px;"></i>公告文案</div>
@@ -2052,13 +1929,11 @@
     <script src="js/core.js"></script>
 
     <!-- == 功能模块 == -->
-    <!-- mood.js replaced by energy.js -->
+    <script src="js/features/mood.js"></script>
     <script src="js/features/envelope.js"></script>
     <script src="js/features/reply-library.js"></script>
     <script src="js/features/theme-editor.js"></script>
     <script src="js/features/call.js"></script>
-    <script src="js/features/notes.js"></script>
-    <script src="js/features/energy.js"></script>
 
     <!-- == 合并模块 == -->
     <script src="js/games.js"></script> 
