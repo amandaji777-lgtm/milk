@@ -13,7 +13,9 @@
         timeline: [],
         myHistory: [],
         partnerHistory: [],
-        hasUnread: false
+        hasUnread: false,
+        lastPartnerStatusChange: 0,
+        nextPartnerStatusChangeHours: 0
     };
 
     let currentEnergyTab = 'my';
@@ -26,7 +28,9 @@
             timeline: [],
             myHistory: [],
             partnerHistory: [],
-            hasUnread: false
+            hasUnread: false,
+            lastPartnerStatusChange: 0,
+            nextPartnerStatusChangeHours: 0
         }, saved);
     }
 
@@ -129,7 +133,27 @@
             </div>`).join('');
     }
 
+    function checkProposalAutoResolve() {
+        const p = energyData.pendingProposal;
+        if (!p || p.from !== 'me' || !p.resolveAt) return;
+        if (Date.now() < p.resolveAt) return;
+        const opts = p.options && p.options.length ? p.options : ['同意', '期待', '不同意'];
+        const picked = opts[Math.floor(Math.random() * opts.length)];
+        if (picked === '同意' || (picked !== '不同意')) {
+            energyData.ourStatus = { text: picked === '同意' ? p.content : picked, ts: Date.now() };
+            pushTimeline('our', `我们的状态更新为「${energyData.ourStatus.text}」（提议回应）`);
+        } else {
+            pushTimeline('our', `提议「${p.content}」未通过`);
+        }
+        energyData.pendingProposal = null;
+        energyData.hasUnread = picked !== '不同意';
+        saveEnergy();
+        updateBadge();
+    }
+
     function renderOurTab() {
+        checkProposalAutoResolve();
+
         const ourEl = document.getElementById('our-energy-display');
         const ourTime = document.getElementById('our-energy-time');
         const pendingNotice = document.getElementById('pending-proposal-notice');
@@ -142,7 +166,9 @@
         if (pendingNotice) {
             if (isWaiting) {
                 pendingNotice.style.display = 'block';
-                pendingNotice.textContent = `等待回应提议「${energyData.pendingProposal.content}」`;
+                const resolveAt = energyData.pendingProposal.resolveAt;
+                const hoursLeft = resolveAt ? Math.max(0, Math.ceil((resolveAt - Date.now()) / 3600000)) : '?';
+                pendingNotice.textContent = `等待回应提议「${energyData.pendingProposal.content}」· 预计 ${hoursLeft} 小时内收到回应`;
             } else {
                 pendingNotice.style.display = 'none';
             }
@@ -169,12 +195,14 @@
     function renderTimeline() {
         const list = document.getElementById('energy-timeline-list');
         if (!list) return;
-        if (!energyData.timeline.length) {
+        const OUR_TYPES = new Set(['our', 'proposal', 'summary']);
+        const filtered = energyData.timeline.filter(item => OUR_TYPES.has(item.type));
+        if (!filtered.length) {
             list.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--text-secondary);font-size:13px;">暂无记录</div>';
             return;
         }
         const groups = {};
-        energyData.timeline.forEach(item => {
+        filtered.forEach(item => {
             const dateKey = new Date(item.ts).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
             if (!groups[dateKey]) groups[dateKey] = [];
             groups[dateKey].push(item);
@@ -223,17 +251,21 @@
     function init() {
         loadEnergy().then(() => { updateBadge(); });
 
-        // 打开能量状态时：始终随机更新他的状态
+        // 打开能量状态时：按时间间隔（1-8小时）随机更新他的状态，同A网站逻辑
         const energySettingsEl = document.getElementById('energy-settings');
         if (energySettingsEl) energySettingsEl.addEventListener('click', () => {
             energyData.hasUnread = false;
-            const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
-            const text = pool[Math.floor(Math.random() * pool.length)];
-            energyData.partnerStatus = { text, ts: Date.now() };
-            if (!energyData.partnerHistory) energyData.partnerHistory = [];
-            energyData.partnerHistory.unshift({ text, ts: Date.now() });
-            if (energyData.partnerHistory.length > 50) energyData.partnerHistory = energyData.partnerHistory.slice(0, 50);
-            pushTimeline('partner', `他的状态：${text}`);
+            const hoursSinceLast = (Date.now() - (energyData.lastPartnerStatusChange || 0)) / 3600000;
+            if (hoursSinceLast >= (energyData.nextPartnerStatusChangeHours || 0)) {
+                const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
+                const text = pool[Math.floor(Math.random() * pool.length)];
+                energyData.partnerStatus = { text, ts: Date.now() };
+                if (!energyData.partnerHistory) energyData.partnerHistory = [];
+                energyData.partnerHistory.unshift({ text, ts: Date.now() });
+                if (energyData.partnerHistory.length > 50) energyData.partnerHistory = energyData.partnerHistory.slice(0, 50);
+                energyData.lastPartnerStatusChange = Date.now();
+                energyData.nextPartnerStatusChangeHours = 1 + Math.random() * 7;
+            }
             saveEnergy();
             updateBadge();
             currentEnergyTab = 'my';
@@ -321,7 +353,8 @@
             const inp = document.getElementById('propose-content-input');
             const content = inp ? inp.value.trim() : '';
             if (!content) { if (typeof showNotification === 'function') showNotification('请输入提议内容', 'warning'); return; }
-            energyData.pendingProposal = { id: 'prop_' + Date.now(), content, options: [...(window._proposeOptions || [])], from: 'me', ts: Date.now() };
+            const resolveHours = 2 + Math.random() * 10;
+            energyData.pendingProposal = { id: 'prop_' + Date.now(), content, options: [...(window._proposeOptions || [])], from: 'me', ts: Date.now(), resolveAt: Date.now() + resolveHours * 3600000 };
             pushTimeline('proposal', `我发起提议：将状态改为「${content}」`);
             saveEnergy();
             renderEnergyModal();

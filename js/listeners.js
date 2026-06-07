@@ -488,8 +488,8 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
 
             document.getElementById('emoji-mgr-function')?.addEventListener('click', () => {
                 hideModal(DOMElements.advancedModal.modal);
-                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'reply'; currentSubTab = 'stickers'; }
-                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'reply'));
+                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'stickers'; currentSubTab = 'stickers'; }
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'stickers'));
                 showModal(document.getElementById('custom-replies-modal'));
                 if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
             });
@@ -501,7 +501,19 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                     textarea.value = customStatuses.join('\n');
                 }
                 showModal(document.getElementById('online-status-modal'));
+                setTimeout(() => { if (typeof renderOnlineStatusPreview === 'function') renderOnlineStatusPreview(); }, 50);
             });
+
+            function renderOnlineStatusPreview() {
+                const list = document.getElementById('online-status-preview-list');
+                if (!list) return;
+                const statuses = typeof customStatuses !== 'undefined' ? customStatuses : [];
+                if (!statuses.length) { list.style.display = 'none'; return; }
+                list.style.display = 'flex';
+                list.innerHTML = statuses.map(s => `
+                    <div style="padding:9px 14px;background:var(--primary-bg);border-radius:10px;border:1px solid var(--border-color);font-size:13px;color:var(--text-primary);">${s}</div>
+                `).join('');
+            }
 
             document.getElementById('back-online-status')?.addEventListener('click', () => {
                 hideModal(document.getElementById('online-status-modal'));
@@ -514,8 +526,8 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 customStatuses = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
                 if (typeof getStorageKey === 'function') localforage.setItem(getStorageKey('customStatuses'), customStatuses);
                 if (typeof showNotification === 'function') showNotification('在线状态词库已保存', 'success');
-                hideModal(document.getElementById('online-status-modal'));
-                showModal(DOMElements.advancedModal.modal);
+                textarea.value = '';
+                renderOnlineStatusPreview();
             });
 
             const _envelopeSettingsEl = document.getElementById('envelope-settings');

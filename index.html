@@ -1538,7 +1538,8 @@
         <div class="modal-content">
             <div class="modal-title"><i class="fas fa-circle"></i><span>在线状态词库</span></div>
             <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">每行一个状态词，系统会按设定频率随机切换</div>
-            <textarea id="online-status-textarea" class="modal-textarea" placeholder="每行输入一个在线状态词..." style="min-height:200px;resize:vertical;font-size:13px;"></textarea>
+            <textarea id="online-status-textarea" class="modal-textarea" placeholder="每行输入一个在线状态词..." style="min-height:140px;resize:vertical;font-size:13px;"></textarea>
+            <div id="online-status-preview-list" style="display:none;margin-top:10px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-secondary" id="back-online-status"><i class="fas fa-arrow-left"></i> 返回</button>
                 <button class="modal-btn modal-btn-primary" id="save-online-status">保存</button>
@@ -1669,7 +1670,11 @@
                 </button>
                 <button class="sidebar-btn" data-major="atmosphere">
                     <i class="fas fa-magic"></i>
-                    <span>氛围感</span>
+                    <span>拍一拍</span>
+                </button>
+                <button class="sidebar-btn" data-major="stickers">
+                    <i class="fas fa-laugh-beam"></i>
+                    <span>表情库</span>
                 </button>
                 <button class="sidebar-btn" data-major="announcement" onclick="switchToAnnouncementPanel()">
                     <i class="fas fa-newspaper"></i>

@@ -433,6 +433,12 @@ const LIBRARY_CONFIG = {
         tabs: [
             { id: 'pokes', name: '拍一拍', mode: 'list' }
         ]
+    },
+    stickers: {
+        title: "表情库管理",
+        tabs: [
+            { id: 'stickers', name: '我的表情', mode: 'grid' }
+        ]
     }
 };
 let currentAnnType = 'anniversary'; 
