@@ -245,6 +245,9 @@
                     <button class="collapsed-extra-btn" id="collapsed-call-btn" title="视频通话" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');if(window.callFeature&&typeof window.callFeature.startCall==='function')window.callFeature.startCall(false);})();">
                         <i class="fas fa-video"></i>
                     </button>
+                    <button class="collapsed-extra-btn" id="collapsed-note-btn" title="小纸条" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');openWriteNote();})();">
+                        <i class="fas fa-sticky-note"></i>
+                    </button>
                     <button class="collapsed-extra-btn" title="退出收纳" onclick="window.exitCollapseMode && window.exitCollapseMode()" style="color:#ff5050; background:rgba(255,80,80,0.1);">
                         <i class="fas fa-times"></i>
                     </button>
@@ -459,6 +462,55 @@
             <button class="modal-btn modal-btn-primary" id="env-view-save-btn" onclick="saveEnvEdit()" style="display:none;">保存</button>
         </div>
     </div>
+    </div>
+</div>
+
+<!-- 小纸条管理模态框 -->
+<div class="modal" id="notes-modal">
+    <div class="modal-content">
+        <div class="modal-title"><i class="fas fa-sticky-note"></i><span>小纸条管理</span><span id="notes-unread-badge" style="display:none;background:var(--accent-color);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:8px;"></span></div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button class="notes-tab-btn active" data-notes-tab="recv" style="flex:1;padding:7px 0;border-radius:10px;border:1px solid var(--border-color);background:var(--accent-color);color:#fff;font-size:13px;cursor:pointer;">收到的</button>
+            <button class="notes-tab-btn" data-notes-tab="sent" style="flex:1;padding:7px 0;border-radius:10px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:13px;cursor:pointer;">我发出的</button>
+        </div>
+        <div id="notes-list" style="max-height:55vh;overflow-y:auto;"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-secondary" id="close-notes-modal">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 小纸条详情模态框 -->
+<div class="modal" id="note-detail-modal" style="z-index:2100;">
+    <div class="modal-content">
+        <div class="modal-title"><i class="fas fa-sticky-note"></i><span id="note-detail-title">小纸条</span></div>
+        <div id="note-detail-image" style="display:none;margin-bottom:12px;"><img id="note-detail-img" style="max-width:100%;border-radius:10px;"></div>
+        <div id="note-detail-text" style="font-size:14px;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;padding:12px;background:var(--primary-bg);border-radius:10px;min-height:60px;"></div>
+        <div id="note-detail-time" style="font-size:11px;color:var(--text-secondary);margin-top:8px;text-align:right;"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-secondary" id="delete-note-detail-btn">删除</button>
+            <button class="modal-btn modal-btn-primary" id="close-note-detail-btn">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 写小纸条模态框 -->
+<div class="modal" id="write-note-modal" style="z-index:2100;">
+    <div class="modal-content">
+        <div class="modal-title"><i class="fas fa-pen"></i><span>写小纸条</span></div>
+        <textarea id="write-note-text" class="modal-textarea" placeholder="写下心里话（最多200字）..." maxlength="200" style="min-height:120px;resize:none;"></textarea>
+        <div style="text-align:right;font-size:11px;color:var(--text-secondary);margin-top:4px;"><span id="note-char-count">0</span>/200</div>
+        <div style="margin-top:10px;">
+            <label style="font-size:13px;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-image"></i> 附加图片（可选）
+                <input type="file" id="note-image-input" accept="image/*" style="display:none;">
+            </label>
+            <div id="note-image-preview" style="display:none;margin-top:8px;"><img id="note-preview-img" style="max-width:100%;max-height:120px;border-radius:8px;"><button id="remove-note-image" style="display:block;margin-top:4px;background:none;border:none;color:var(--text-secondary);font-size:12px;cursor:pointer;">移除图片</button></div>
+        </div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-secondary" id="cancel-write-note">取消</button>
+            <button class="modal-btn modal-btn-primary" id="send-note-btn">发送</button>
+        </div>
     </div>
 </div>
 
@@ -1938,6 +1990,7 @@
     <script src="js/features/reply-library.js"></script>
     <script src="js/features/theme-editor.js"></script>
     <script src="js/features/call.js"></script>
+    <script src="js/features/notes.js"></script>
 
     <!-- == 合并模块 == -->
     <script src="js/games.js"></script> 
