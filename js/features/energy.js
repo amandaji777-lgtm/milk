@@ -196,26 +196,30 @@
     window._removePartnerTag = function (i) { energyData.partnerTags.splice(i, 1); saveEnergy(); renderPartnerTagsList(); };
     window._removeProposeOption = function (i) { window._proposeOptions.splice(i, 1); renderProposeOptions(); };
 
-    function init() {
-        loadEnergy().then(() => { updateBadge(); });
+    let energyLoaded = false;
 
-        // 打开能量状态时：按时间间隔（1-8小时）随机更新他的状态
+    function init() {
+        // 打开能量状态时：先加载数据，再按时间间隔随机更新他的状态
         document.getElementById('energy-settings')?.addEventListener('click', () => {
-            energyData.hasUnread = false;
-            const hoursSinceLast = (Date.now() - (energyData.lastPartnerStatusChange || 0)) / 3600000;
-            if (hoursSinceLast >= (energyData.nextPartnerStatusChangeHours || 0)) {
-                const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
-                const text = pool[Math.floor(Math.random() * pool.length)];
-                energyData.partnerStatus = { text, ts: Date.now() };
-                if (!energyData.partnerHistory) energyData.partnerHistory = [];
-                energyData.partnerHistory.unshift({ text, ts: Date.now() });
-                if (energyData.partnerHistory.length > 50) energyData.partnerHistory = energyData.partnerHistory.slice(0, 50);
-                energyData.lastPartnerStatusChange = Date.now();
-                energyData.nextPartnerStatusChangeHours = 1 + Math.random() * 7;
-            }
-            saveEnergy();
-            updateBadge();
-            setTimeout(() => switchEnergyTab('my'), 50);
+            const doOpen = () => {
+                energyData.hasUnread = false;
+                const hoursSinceLast = (Date.now() - (energyData.lastPartnerStatusChange || 0)) / 3600000;
+                if (hoursSinceLast >= (energyData.nextPartnerStatusChangeHours || 0)) {
+                    const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
+                    const text = pool[Math.floor(Math.random() * pool.length)];
+                    energyData.partnerStatus = { text, ts: Date.now() };
+                    if (!energyData.partnerHistory) energyData.partnerHistory = [];
+                    energyData.partnerHistory.unshift({ text, ts: Date.now() });
+                    if (energyData.partnerHistory.length > 50) energyData.partnerHistory = energyData.partnerHistory.slice(0, 50);
+                    energyData.lastPartnerStatusChange = Date.now();
+                    energyData.nextPartnerStatusChangeHours = 1 + Math.random() * 7;
+                }
+                saveEnergy();
+                updateBadge();
+                setTimeout(() => switchEnergyTab('my'), 50);
+            };
+            if (!energyLoaded) { loadEnergy().then(() => { energyLoaded = true; doOpen(); }); }
+            else { doOpen(); }
         });
 
         // Tab 切换

@@ -103,9 +103,9 @@
         if (typeof playSound === 'function') playSound('send');
     };
 
-    function init() {
-        loadNotes().then(() => { updateNotesBadge(); });
+    let notesLoaded = false;
 
+    function init() {
         // 关闭小纸条管理
         const closeBtn = document.getElementById('close-notes-modal');
         if (closeBtn) closeBtn.addEventListener('click', () => hideModal(document.getElementById('notes-modal')));
@@ -124,10 +124,14 @@
             });
         });
 
-        // 打开小纸条管理时渲染列表
+        // 打开小纸条管理时加载并渲染列表
         const notesSettingsEl = document.getElementById('notes-settings');
         if (notesSettingsEl) {
-            notesSettingsEl.addEventListener('click', () => { renderNotesList(); updateNotesBadge(); });
+            notesSettingsEl.addEventListener('click', () => {
+                const doRender = () => { renderNotesList(); updateNotesBadge(); };
+                if (!notesLoaded) { loadNotes().then(() => { notesLoaded = true; doRender(); }); }
+                else { doRender(); }
+            });
         }
 
         // 字数统计
