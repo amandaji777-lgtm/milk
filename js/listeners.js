@@ -477,6 +477,24 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 showModal(DOMElements.advancedModal.modal);
             });
 
+            const _envelopeSettingsEl = document.getElementById('envelope-settings');
+            if (_envelopeSettingsEl) _envelopeSettingsEl.addEventListener('click', () => {
+                hideModal(DOMElements.settingsModal.modal);
+                showModal(document.getElementById('envelope-modal'));
+            });
+
+            const _notesSettingsEl = document.getElementById('notes-settings');
+            if (_notesSettingsEl) _notesSettingsEl.addEventListener('click', () => {
+                hideModal(DOMElements.settingsModal.modal);
+                showModal(document.getElementById('notes-modal'));
+            });
+
+            const _energySettingsEl = document.getElementById('energy-settings');
+            if (_energySettingsEl) _energySettingsEl.addEventListener('click', () => {
+                hideModal(DOMElements.settingsModal.modal);
+                showModal(document.getElementById('mood-modal'));
+            });
+
             const _dataSettingsEl = document.getElementById('data-settings');
             if (_dataSettingsEl) _dataSettingsEl.addEventListener('click', () => {
                 hideModal(DOMElements.settingsModal.modal);
