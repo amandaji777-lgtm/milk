@@ -477,6 +477,24 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 showModal(DOMElements.advancedModal.modal);
             });
 
+            // 小纸条入口
+            document.getElementById('notes-settings')?.addEventListener('click', () => {
+                hideModal(DOMElements.settingsModal.modal);
+                showModal(document.getElementById('notes-modal'));
+            });
+            document.getElementById('close-notes-modal')?.addEventListener('click', () => {
+                hideModal(document.getElementById('notes-modal'));
+            });
+
+            // 能量状态入口
+            document.getElementById('energy-settings')?.addEventListener('click', () => {
+                hideModal(DOMElements.settingsModal.modal);
+                showModal(document.getElementById('energy-modal'));
+            });
+            document.getElementById('close-energy-modal')?.addEventListener('click', () => {
+                hideModal(document.getElementById('energy-modal'));
+            });
+
             const _dataSettingsEl = document.getElementById('data-settings');
             if (_dataSettingsEl) _dataSettingsEl.addEventListener('click', () => {
                 hideModal(DOMElements.settingsModal.modal);

@@ -911,7 +911,13 @@ function createMessageFragment(msg, prevMsg, nextMsg, lastSenderRef) {
     if (msg.type === 'system') {
         const systemMsgDiv = document.createElement('div');
         systemMsgDiv.className = 'system-message';
-        systemMsgDiv.innerHTML = msg.text;
+        if (msg.noteId) {
+            systemMsgDiv.style.cursor = 'pointer';
+            systemMsgDiv.innerHTML = `<span style="text-decoration:underline;text-decoration-style:dotted;">${msg.text}</span> <i class="fas fa-sticky-note" style="font-size:11px;opacity:0.7;"></i>`;
+            systemMsgDiv.addEventListener('click', () => { if (typeof window.openNoteDetail === 'function') window.openNoteDetail(msg.noteId); });
+        } else {
+            systemMsgDiv.innerHTML = msg.text;
+        }
         fragment.appendChild(systemMsgDiv);
         lastSenderRef.current = 'system';
         return fragment;
@@ -1562,13 +1568,18 @@ window.simulateReply = function() {
             try {
                 const replyPool = replyPoolOnce;
                 let replyText = '';
-                for (let t = 0; t < 6; t++) {
-                    const picked = replyPool[Math.floor(Math.random() * replyPool.length)];
-                    if (picked && String(picked).trim()) {
-                        replyText = String(picked).trim();
-                        break;
+                const cardCount = Math.floor(Math.random() * 3) + 1;
+                const picked = [];
+                for (let c = 0; c < cardCount; c++) {
+                    for (let t = 0; t < 6; t++) {
+                        const card = replyPool[Math.floor(Math.random() * replyPool.length)];
+                        if (card && String(card).trim() && !picked.includes(String(card).trim())) {
+                            picked.push(String(card).trim());
+                            break;
+                        }
                     }
                 }
+                replyText = picked.join(' ');
                 if (!replyText && i === replyCount - 1) {
                     (function(){try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e){}var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
                     return;
