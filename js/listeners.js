@@ -477,6 +477,31 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 showModal(DOMElements.advancedModal.modal);
             });
 
+            // 高级设置内的子项
+            document.getElementById('custom-replies-function')?.addEventListener('click', () => {
+                hideModal(DOMElements.advancedModal.modal);
+                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'reply'; currentSubTab = 'custom'; }
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'reply'));
+                showModal(document.getElementById('custom-replies-modal'));
+                if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
+            });
+
+            document.getElementById('emoji-mgr-function')?.addEventListener('click', () => {
+                hideModal(DOMElements.advancedModal.modal);
+                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'reply'; currentSubTab = 'stickers'; }
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'reply'));
+                showModal(document.getElementById('custom-replies-modal'));
+                if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
+            });
+
+            document.getElementById('status-mgr-function')?.addEventListener('click', () => {
+                hideModal(DOMElements.advancedModal.modal);
+                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'atmosphere'; currentSubTab = 'pokes'; }
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'atmosphere'));
+                showModal(document.getElementById('custom-replies-modal'));
+                if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
+            });
+
             const _envelopeSettingsEl = document.getElementById('envelope-settings');
             if (_envelopeSettingsEl) _envelopeSettingsEl.addEventListener('click', () => {
                 hideModal(DOMElements.settingsModal.modal);

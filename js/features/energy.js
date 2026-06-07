@@ -195,10 +195,16 @@
     function init() {
         loadEnergy().then(() => { updateBadge(); });
 
-        // 打开能量状态时渲染
+        // 打开能量状态时：自动随机更新他的状态（60%概率）
         const energySettingsEl = document.getElementById('energy-settings');
         if (energySettingsEl) energySettingsEl.addEventListener('click', () => {
             energyData.hasUnread = false;
+            if (Math.random() < 0.6) {
+                const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
+                const text = pool[Math.floor(Math.random() * pool.length)];
+                energyData.partnerStatus = { text, ts: Date.now() };
+                pushTimeline('partner', `他的状态：${text}`);
+            }
             saveEnergy();
             updateBadge();
             renderEnergyModal();
@@ -227,14 +233,14 @@
             hideModal(document.getElementById('edit-my-energy-modal'));
         });
 
-        // 他的状态随机更新
-        document.getElementById('refresh-partner-energy-btn')?.addEventListener('click', () => {
-            const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
-            const text = pool[Math.floor(Math.random() * pool.length)];
-            energyData.partnerStatus = { text, ts: Date.now() };
-            pushTimeline('partner', `他的状态：${text}`);
+        // 管理他的状态标签
+        document.getElementById('manage-partner-tags-btn')?.addEventListener('click', () => {
+            const current = energyData.partnerTags.join('\n');
+            const newVal = prompt('每行一个标签（当前标签）：', current);
+            if (newVal === null) return;
+            energyData.partnerTags = newVal.split('\n').map(s => s.trim()).filter(Boolean);
             saveEnergy();
-            renderEnergyModal();
+            if (typeof showNotification === 'function') showNotification('标签已保存', 'success');
         });
 
         // 我发起提议
@@ -267,23 +273,6 @@
             if (typeof showNotification === 'function') showNotification('提议已发出', 'success');
         });
 
-        // 他发起提议
-        document.getElementById('partner-propose-btn')?.addEventListener('click', () => {
-            const inp = document.getElementById('partner-propose-input');
-            if (inp) inp.value = '';
-            showModal(document.getElementById('partner-propose-modal'));
-        });
-        document.getElementById('cancel-partner-propose')?.addEventListener('click', () => hideModal(document.getElementById('partner-propose-modal')));
-        document.getElementById('send-partner-propose-btn')?.addEventListener('click', () => {
-            const inp = document.getElementById('partner-propose-input');
-            const content = inp ? inp.value.trim() : '';
-            if (!content) return;
-            energyData.pendingProposal = { id: 'prop_' + Date.now(), content, options: ['同意', '不同意', '其他'], from: 'partner', ts: Date.now() };
-            pushTimeline('proposal', `他发起提议：将状态改为「${content}」`);
-            saveEnergy();
-            renderEnergyModal();
-            hideModal(document.getElementById('partner-propose-modal'));
-        });
 
         // respond-proposal-btn 由 renderEnergyModal 动态绑定
         document.getElementById('cancel-respond')?.addEventListener('click', () => hideModal(document.getElementById('respond-proposal-modal')));
