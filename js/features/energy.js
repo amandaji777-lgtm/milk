@@ -59,7 +59,21 @@
         if (ourEl) ourEl.textContent = energyData.ourStatus.text || '（未设置）';
         if (ourTime) ourTime.textContent = energyData.ourStatus.ts ? fmtTime(energyData.ourStatus.ts) + '更新' : '';
 
-        if (pendingNotice) pendingNotice.style.display = energyData.pendingProposal ? 'block' : 'none';
+        // 只有他发起的提议，我才能回应
+        const canRespond = energyData.pendingProposal && energyData.pendingProposal.from === 'partner';
+        const isWaiting = energyData.pendingProposal && energyData.pendingProposal.from === 'me';
+        if (pendingNotice) {
+            if (canRespond) {
+                pendingNotice.style.display = 'block';
+                pendingNotice.innerHTML = `他发起了提议「${energyData.pendingProposal.content}」· <button id="respond-proposal-btn" style="background:none;border:none;color:var(--accent-color);font-size:12px;cursor:pointer;text-decoration:underline;">回应</button>`;
+                document.getElementById('respond-proposal-btn')?.addEventListener('click', openRespondModal);
+            } else if (isWaiting) {
+                pendingNotice.style.display = 'block';
+                pendingNotice.innerHTML = `等待他回应提议「${energyData.pendingProposal.content}」`;
+            } else {
+                pendingNotice.style.display = 'none';
+            }
+        }
 
         const recentSummary = energyData.summaries[0];
         if (summaryBox) {
@@ -82,14 +96,28 @@
             list.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--text-secondary);font-size:13px;">暂无记录</div>';
             return;
         }
-        list.innerHTML = energyData.timeline.map(item => {
-            const icon = item.type === 'my' ? '👤' : item.type === 'partner' ? '💫' : item.type === 'our' ? '✨' : item.type === 'proposal' ? '📨' : item.type === 'summary' ? '📝' : '💬';
-            return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-color);">
-                <div style="font-size:18px;flex-shrink:0;">${icon}</div>
-                <div>
-                    <div style="font-size:13px;color:var(--text-primary);">${item.text}</div>
-                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${fmtTime(item.ts)}</div>
-                </div>
+        // 按日期分组
+        const groups = {};
+        energyData.timeline.forEach(item => {
+            const dateKey = new Date(item.ts).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+            if (!groups[dateKey]) groups[dateKey] = [];
+            groups[dateKey].push(item);
+        });
+        list.innerHTML = Object.entries(groups).map(([date, items]) => {
+            const rows = items.map(item => {
+                const icon = item.type === 'my' ? '👤' : item.type === 'partner' ? '💫' : item.type === 'our' ? '✨' : item.type === 'proposal' ? '📨' : item.type === 'summary' ? '📝' : '💬';
+                const time = new Date(item.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(var(--border-color-rgb),0.5);">
+                    <div style="font-size:16px;flex-shrink:0;">${icon}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px;color:var(--text-primary);">${item.text}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${time}</div>
+                    </div>
+                </div>`;
+            }).join('');
+            return `<div style="margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:700;color:var(--text-secondary);padding:6px 0;letter-spacing:0.5px;">${date}</div>
+                ${rows}
             </div>`;
         }).join('');
     }
@@ -114,6 +142,17 @@
         btns.innerHTML = options.map(opt => `
             <button onclick="window._respondWith('${opt}')" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border-color);background:var(--primary-bg);color:var(--text-primary);font-size:14px;cursor:pointer;">${opt}</button>
         `).join('');
+    }
+
+    function openRespondModal() {
+        const display = document.getElementById('proposal-content-display');
+        if (display && energyData.pendingProposal) display.textContent = energyData.pendingProposal.content;
+        const otherInp = document.getElementById('other-response-input');
+        const optBtns = document.getElementById('proposal-options-btns');
+        if (otherInp) otherInp.style.display = 'none';
+        if (optBtns) { optBtns.style.display = 'flex'; optBtns.style.flexDirection = 'column'; }
+        renderRespondOptions();
+        showModal(document.getElementById('respond-proposal-modal'));
     }
 
     window._respondWith = function (option) {
@@ -246,16 +285,7 @@
             hideModal(document.getElementById('partner-propose-modal'));
         });
 
-        // 回应提议
-        document.getElementById('respond-proposal-btn')?.addEventListener('click', () => {
-            const display = document.getElementById('proposal-content-display');
-            if (display && energyData.pendingProposal) display.textContent = energyData.pendingProposal.content;
-            document.getElementById('other-response-input').style.display = 'none';
-            document.getElementById('proposal-options-btns').style.display = 'flex';
-            document.getElementById('proposal-options-btns').style.flexDirection = 'column';
-            renderRespondOptions();
-            showModal(document.getElementById('respond-proposal-modal'));
-        });
+        // respond-proposal-btn 由 renderEnergyModal 动态绑定
         document.getElementById('cancel-respond')?.addEventListener('click', () => hideModal(document.getElementById('respond-proposal-modal')));
         document.getElementById('cancel-other-response')?.addEventListener('click', () => {
             document.getElementById('other-response-input').style.display = 'none';

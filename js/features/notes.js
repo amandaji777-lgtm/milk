@@ -34,16 +34,22 @@
             return;
         }
         list.innerHTML = filtered.map(n => {
-            const date = new Date(n.ts).toLocaleDateString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
-            const preview = n.text.length > 40 ? n.text.slice(0, 40) + '…' : n.text;
+            const d = new Date(n.ts);
+            const dateStr = d.toLocaleDateString('zh-CN', {month:'numeric', day:'numeric'});
+            const timeStr = d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+            const preview = n.text.length > 30 ? n.text.slice(0, 30) + '…' : n.text;
             const isUnread = n.from === 'partner' && !n.read;
-            return `<div class="env-letter-item" style="${isUnread ? 'border-left:3px solid var(--accent-color);' : ''}" onclick="window.openNoteDetail('${n.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-size:12px;color:var(--text-secondary);">${n.from === 'partner' ? (settings.partnerName || '对方') : (settings.myName || '我')} · ${date}</div>
-                    ${isUnread ? '<span style="background:var(--accent-color);color:#fff;font-size:9px;padding:1px 5px;border-radius:6px;">新</span>' : ''}
+            return `<div onclick="window.openNoteDetail('${n.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--primary-bg);border-radius:10px;margin-bottom:8px;cursor:pointer;${isUnread ? 'border-left:3px solid var(--accent-color);' : ''}">
+                <div style="flex-shrink:0;text-align:center;min-width:36px;">
+                    <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${dateStr}</div>
+                    <div style="font-size:11px;color:var(--text-secondary);">${timeStr}</div>
                 </div>
-                <div style="font-size:13px;color:var(--text-primary);margin-top:4px;">${preview}</div>
-                ${n.image ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;"><i class="fas fa-image"></i> 含图片</div>' : ''}
+                <div style="width:1px;height:32px;background:var(--border-color);flex-shrink:0;"></div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${preview}</div>
+                    ${n.image ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;"><i class="fas fa-image"></i> 含图片</div>' : ''}
+                </div>
+                ${isUnread ? '<span style="background:var(--accent-color);color:#fff;font-size:9px;padding:1px 5px;border-radius:6px;flex-shrink:0;">新</span>' : ''}
             </div>`;
         }).join('');
     }
