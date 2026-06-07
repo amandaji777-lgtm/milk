@@ -496,10 +496,26 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
 
             document.getElementById('status-mgr-function')?.addEventListener('click', () => {
                 hideModal(DOMElements.advancedModal.modal);
-                if (typeof currentMajorTab !== 'undefined') { currentMajorTab = 'atmosphere'; currentSubTab = 'pokes'; }
-                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.major === 'atmosphere'));
-                showModal(document.getElementById('custom-replies-modal'));
-                if (typeof renderReplyLibrary === 'function') renderReplyLibrary();
+                const textarea = document.getElementById('online-status-textarea');
+                if (textarea && typeof customStatuses !== 'undefined') {
+                    textarea.value = customStatuses.join('\n');
+                }
+                showModal(document.getElementById('online-status-modal'));
+            });
+
+            document.getElementById('back-online-status')?.addEventListener('click', () => {
+                hideModal(document.getElementById('online-status-modal'));
+                showModal(DOMElements.advancedModal.modal);
+            });
+
+            document.getElementById('save-online-status')?.addEventListener('click', () => {
+                const textarea = document.getElementById('online-status-textarea');
+                if (!textarea) return;
+                customStatuses = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+                if (typeof getStorageKey === 'function') localforage.setItem(getStorageKey('customStatuses'), customStatuses);
+                if (typeof showNotification === 'function') showNotification('在线状态词库已保存', 'success');
+                hideModal(document.getElementById('online-status-modal'));
+                showModal(DOMElements.advancedModal.modal);
             });
 
             const _envelopeSettingsEl = document.getElementById('envelope-settings');
@@ -512,6 +528,11 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
             if (_notesSettingsEl) _notesSettingsEl.addEventListener('click', () => {
                 hideModal(DOMElements.settingsModal.modal);
                 showModal(document.getElementById('notes-modal'));
+            });
+
+            document.getElementById('back-notes-modal')?.addEventListener('click', () => {
+                hideModal(document.getElementById('notes-modal'));
+                showModal(DOMElements.settingsModal.modal);
             });
 
             const _energySettingsEl = document.getElementById('energy-settings');
@@ -1329,6 +1350,7 @@ if (_sendEnvEl) _sendEnvEl.addEventListener('click', handleSendEnvelope);
 const _cancelEnvEl = document.getElementById('cancel-envelope');
 if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
     hideModal(document.getElementById('envelope-modal'));
+    showModal(DOMElements.settingsModal.modal);
 });
             const closeFortune = document.getElementById('close-fortune');
             if (closeFortune) {

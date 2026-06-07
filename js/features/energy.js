@@ -8,15 +8,26 @@
         partnerStatus: { text: '', ts: 0 },
         ourStatus: { text: '', ts: 0 },
         partnerTags: [...DEFAULT_PARTNER_TAGS],
-        pendingProposal: null,   // { id, content, options, from, ts }
-        summaries: [],           // [{ id, text, ts, reply, replyTs }]
-        timeline: [],            // [{ id, type, text, ts }]
+        pendingProposal: null,
+        summaries: [],
+        timeline: [],
+        myHistory: [],
+        partnerHistory: [],
         hasUnread: false
     };
 
+    let currentEnergyTab = 'my';
+
     async function loadEnergy() {
         const saved = await localforage.getItem(getStorageKey('energyData'));
-        if (saved) energyData = Object.assign({ partnerTags: [...DEFAULT_PARTNER_TAGS], summaries: [], timeline: [], hasUnread: false }, saved);
+        if (saved) energyData = Object.assign({
+            partnerTags: [...DEFAULT_PARTNER_TAGS],
+            summaries: [],
+            timeline: [],
+            myHistory: [],
+            partnerHistory: [],
+            hasUnread: false
+        }, saved);
     }
 
     function saveEnergy() { localforage.setItem(getStorageKey('energyData'), energyData); }
@@ -42,34 +53,96 @@
         if (badge) badge.style.display = energyData.hasUnread ? 'inline-block' : 'none';
     }
 
-    function renderEnergyModal() {
+    function switchEnergyTab(tab) {
+        currentEnergyTab = tab;
+        document.querySelectorAll('.energy-tab-btn').forEach(btn => {
+            const active = btn.dataset.energyTab === tab;
+            btn.style.background = active ? 'var(--accent-color)' : 'transparent';
+            btn.style.color = active ? '#fff' : 'var(--text-secondary)';
+        });
+        document.querySelectorAll('.energy-tab-panel').forEach(p => { p.style.display = 'none'; });
+        const panel = document.getElementById('energy-tab-' + tab);
+        if (panel) panel.style.display = 'block';
+        renderCurrentTab();
+    }
+
+    function renderCurrentTab() {
+        if (currentEnergyTab === 'my') renderMyTab();
+        else if (currentEnergyTab === 'partner') renderPartnerTab();
+        else if (currentEnergyTab === 'our') renderOurTab();
+    }
+
+    function renderMyTab() {
         const myEl = document.getElementById('my-energy-display');
         const myTime = document.getElementById('my-energy-time');
+        if (myEl) myEl.textContent = energyData.myStatus.text || '（未设置）';
+        if (myTime) myTime.textContent = energyData.myStatus.ts ? fmtTime(energyData.myStatus.ts) + '更新' : '';
+
+        const histList = document.getElementById('my-energy-history-list');
+        if (!histList) return;
+        const hist = energyData.myHistory || [];
+        if (!hist.length) {
+            histList.innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--text-secondary);font-size:12px;">暂无记录</div>';
+        } else {
+            histList.innerHTML = hist.map(h => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(var(--border-color-rgb),0.4);">
+                    <span style="font-size:13px;color:var(--text-primary);">${h.text}</span>
+                    <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;margin-left:8px;">${fmtTime(h.ts)}</span>
+                </div>`).join('');
+        }
+    }
+
+    function renderPartnerTab() {
         const ptEl = document.getElementById('partner-energy-display');
         const ptTime = document.getElementById('partner-energy-time');
+        if (ptEl) ptEl.textContent = energyData.partnerStatus.text || '（未设置）';
+        if (ptTime) ptTime.textContent = energyData.partnerStatus.ts ? fmtTime(energyData.partnerStatus.ts) + '更新' : '';
+
+        renderPartnerTagsList();
+
+        const histList = document.getElementById('partner-energy-history-list');
+        if (!histList) return;
+        const hist = energyData.partnerHistory || [];
+        if (!hist.length) {
+            histList.innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--text-secondary);font-size:12px;">暂无记录</div>';
+        } else {
+            histList.innerHTML = hist.map(h => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(var(--border-color-rgb),0.4);">
+                    <span style="font-size:13px;color:var(--text-primary);">${h.text}</span>
+                    <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;margin-left:8px;">${fmtTime(h.ts)}</span>
+                </div>`).join('');
+        }
+    }
+
+    function renderPartnerTagsList() {
+        const list = document.getElementById('partner-tags-inline-list');
+        if (!list) return;
+        const tags = energyData.partnerTags;
+        if (!tags.length) {
+            list.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);text-align:center;padding:8px 0;">暂无标签</div>';
+            return;
+        }
+        list.innerHTML = tags.map((tag, i) => `
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(var(--border-color-rgb),0.3);">
+                <span style="flex:1;font-size:13px;color:var(--text-primary);">${tag}</span>
+                <button onclick="window._removePartnerTag(${i})" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:13px;padding:2px 4px;">✕</button>
+            </div>`).join('');
+    }
+
+    function renderOurTab() {
         const ourEl = document.getElementById('our-energy-display');
         const ourTime = document.getElementById('our-energy-time');
         const pendingNotice = document.getElementById('pending-proposal-notice');
         const summaryBox = document.getElementById('recent-summary-box');
 
-        if (myEl) myEl.textContent = energyData.myStatus.text || '（未设置）';
-        if (myTime) myTime.textContent = energyData.myStatus.ts ? fmtTime(energyData.myStatus.ts) + '更新' : '';
-        if (ptEl) ptEl.textContent = energyData.partnerStatus.text || '（未设置）';
-        if (ptTime) ptTime.textContent = energyData.partnerStatus.ts ? fmtTime(energyData.partnerStatus.ts) + '更新' : '';
         if (ourEl) ourEl.textContent = energyData.ourStatus.text || '（未设置）';
         if (ourTime) ourTime.textContent = energyData.ourStatus.ts ? fmtTime(energyData.ourStatus.ts) + '更新' : '';
 
-        // 只有他发起的提议，我才能回应
-        const canRespond = energyData.pendingProposal && energyData.pendingProposal.from === 'partner';
         const isWaiting = energyData.pendingProposal && energyData.pendingProposal.from === 'me';
         if (pendingNotice) {
-            if (canRespond) {
+            if (isWaiting) {
                 pendingNotice.style.display = 'block';
-                pendingNotice.innerHTML = `他发起了提议「${energyData.pendingProposal.content}」· <button id="respond-proposal-btn" style="background:none;border:none;color:var(--accent-color);font-size:12px;cursor:pointer;text-decoration:underline;">回应</button>`;
-                document.getElementById('respond-proposal-btn')?.addEventListener('click', openRespondModal);
-            } else if (isWaiting) {
-                pendingNotice.style.display = 'block';
-                pendingNotice.innerHTML = `等待他回应提议「${energyData.pendingProposal.content}」`;
+                pendingNotice.textContent = `等待回应提议「${energyData.pendingProposal.content}」`;
             } else {
                 pendingNotice.style.display = 'none';
             }
@@ -89,6 +162,10 @@
         }
     }
 
+    function renderEnergyModal() {
+        renderCurrentTab();
+    }
+
     function renderTimeline() {
         const list = document.getElementById('energy-timeline-list');
         if (!list) return;
@@ -96,7 +173,6 @@
             list.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--text-secondary);font-size:13px;">暂无记录</div>';
             return;
         }
-        // 按日期分组
         const groups = {};
         energyData.timeline.forEach(item => {
             const dateKey = new Date(item.ts).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -133,59 +209,11 @@
             </div>`).join('');
     }
 
-    function renderRespondOptions() {
-        const btns = document.getElementById('proposal-options-btns');
-        if (!btns || !energyData.pendingProposal) return;
-        const options = energyData.pendingProposal.options && energyData.pendingProposal.options.length
-            ? energyData.pendingProposal.options
-            : ['同意', '不同意', '其他'];
-        btns.innerHTML = options.map(opt => `
-            <button onclick="window._respondWith('${opt}')" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border-color);background:var(--primary-bg);color:var(--text-primary);font-size:14px;cursor:pointer;">${opt}</button>
-        `).join('');
-    }
-
-    function openRespondModal() {
-        const display = document.getElementById('proposal-content-display');
-        if (display && energyData.pendingProposal) display.textContent = energyData.pendingProposal.content;
-        const otherInp = document.getElementById('other-response-input');
-        const optBtns = document.getElementById('proposal-options-btns');
-        if (otherInp) otherInp.style.display = 'none';
-        if (optBtns) { optBtns.style.display = 'flex'; optBtns.style.flexDirection = 'column'; }
-        renderRespondOptions();
-        showModal(document.getElementById('respond-proposal-modal'));
-    }
-
-    window._respondWith = function (option) {
-        const proposal = energyData.pendingProposal;
-        if (!proposal) return;
-        if (option === '其他') {
-            document.getElementById('other-response-input').style.display = 'block';
-            document.getElementById('proposal-options-btns').style.display = 'none';
-            return;
-        }
-        applyResponse(option, proposal);
-    };
-
-    function applyResponse(responseText, proposal) {
-        if (responseText === '同意') {
-            energyData.ourStatus = { text: proposal.content, ts: Date.now() };
-            pushTimeline('our', `我们的状态更新为「${proposal.content}」（提议通过）`);
-        } else {
-            energyData.hasUnread = false;
-            pushTimeline('proposal', `提议「${proposal.content}」回应：${responseText}`);
-            if (responseText !== '不同意') {
-                energyData.ourStatus = { text: responseText, ts: Date.now() };
-                pushTimeline('our', `我们的状态更新为「${responseText}」`);
-                energyData.hasUnread = true;
-            }
-        }
-        energyData.pendingProposal = null;
+    window._removePartnerTag = function (i) {
+        energyData.partnerTags.splice(i, 1);
         saveEnergy();
-        updateBadge();
-        renderEnergyModal();
-        hideModal(document.getElementById('respond-proposal-modal'));
-        if (typeof showNotification === 'function') showNotification('已回应', 'success');
-    }
+        renderPartnerTagsList();
+    };
 
     window._removeProposeOption = function (i) {
         window._proposeOptions.splice(i, 1);
@@ -195,28 +223,63 @@
     function init() {
         loadEnergy().then(() => { updateBadge(); });
 
-        // 打开能量状态时：自动随机更新他的状态（60%概率）
+        // 打开能量状态时：始终随机更新他的状态
         const energySettingsEl = document.getElementById('energy-settings');
         if (energySettingsEl) energySettingsEl.addEventListener('click', () => {
             energyData.hasUnread = false;
-            if (Math.random() < 0.6) {
-                const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
-                const text = pool[Math.floor(Math.random() * pool.length)];
-                energyData.partnerStatus = { text, ts: Date.now() };
-                pushTimeline('partner', `他的状态：${text}`);
-            }
+            const pool = energyData.partnerTags.length ? energyData.partnerTags : DEFAULT_PARTNER_TAGS;
+            const text = pool[Math.floor(Math.random() * pool.length)];
+            energyData.partnerStatus = { text, ts: Date.now() };
+            if (!energyData.partnerHistory) energyData.partnerHistory = [];
+            energyData.partnerHistory.unshift({ text, ts: Date.now() });
+            if (energyData.partnerHistory.length > 50) energyData.partnerHistory = energyData.partnerHistory.slice(0, 50);
+            pushTimeline('partner', `他的状态：${text}`);
             saveEnergy();
             updateBadge();
-            renderEnergyModal();
+            currentEnergyTab = 'my';
+            setTimeout(() => switchEnergyTab('my'), 50);
         });
 
-        // 关闭
-        const closeMood = document.getElementById('close-mood');
-        if (closeMood) closeMood.addEventListener('click', () => hideModal(document.getElementById('mood-modal')));
+        // 三个Tab切换
+        document.querySelectorAll('.energy-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchEnergyTab(btn.dataset.energyTab));
+        });
+
+        // 管理标签 toggle
+        document.getElementById('toggle-partner-tags-btn')?.addEventListener('click', () => {
+            const mgr = document.getElementById('partner-tags-manager');
+            if (!mgr) return;
+            const open = mgr.style.display !== 'none';
+            mgr.style.display = open ? 'none' : 'block';
+            const btn = document.getElementById('toggle-partner-tags-btn');
+            if (btn) btn.textContent = open ? '管理' : '收起';
+            if (!open) renderPartnerTagsList();
+        });
+
+        // 添加标签
+        document.getElementById('add-partner-tag-btn')?.addEventListener('click', () => {
+            const inp = document.getElementById('new-partner-tag-input');
+            const val = inp ? inp.value.trim() : '';
+            if (!val) return;
+            energyData.partnerTags.push(val);
+            inp.value = '';
+            saveEnergy();
+            renderPartnerTagsList();
+        });
+
+        document.getElementById('new-partner-tag-input')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('add-partner-tag-btn')?.click();
+        });
+
+        // 关闭/返回
+        document.getElementById('close-mood')?.addEventListener('click', () => hideModal(document.getElementById('mood-modal')));
+        document.getElementById('back-mood')?.addEventListener('click', () => {
+            hideModal(document.getElementById('mood-modal'));
+            showModal(document.getElementById('settings-modal'));
+        });
 
         // 编辑我的状态
-        const editMyBtn = document.getElementById('edit-my-energy-btn');
-        if (editMyBtn) editMyBtn.addEventListener('click', () => {
+        document.getElementById('edit-my-energy-btn')?.addEventListener('click', () => {
             const inp = document.getElementById('my-energy-input');
             if (inp) inp.value = energyData.myStatus.text || '';
             showModal(document.getElementById('edit-my-energy-modal'));
@@ -227,20 +290,13 @@
             const text = inp ? inp.value.trim() : '';
             if (!text) return;
             energyData.myStatus = { text, ts: Date.now() };
+            if (!energyData.myHistory) energyData.myHistory = [];
+            energyData.myHistory.unshift({ text, ts: Date.now() });
+            if (energyData.myHistory.length > 50) energyData.myHistory = energyData.myHistory.slice(0, 50);
             pushTimeline('my', `我的状态：${text}`);
             saveEnergy();
             renderEnergyModal();
             hideModal(document.getElementById('edit-my-energy-modal'));
-        });
-
-        // 管理他的状态标签
-        document.getElementById('manage-partner-tags-btn')?.addEventListener('click', () => {
-            const current = energyData.partnerTags.join('\n');
-            const newVal = prompt('每行一个标签（当前标签）：', current);
-            if (newVal === null) return;
-            energyData.partnerTags = newVal.split('\n').map(s => s.trim()).filter(Boolean);
-            saveEnergy();
-            if (typeof showNotification === 'function') showNotification('标签已保存', 'success');
         });
 
         // 我发起提议
@@ -271,20 +327,6 @@
             renderEnergyModal();
             hideModal(document.getElementById('propose-energy-modal'));
             if (typeof showNotification === 'function') showNotification('提议已发出', 'success');
-        });
-
-
-        // respond-proposal-btn 由 renderEnergyModal 动态绑定
-        document.getElementById('cancel-respond')?.addEventListener('click', () => hideModal(document.getElementById('respond-proposal-modal')));
-        document.getElementById('cancel-other-response')?.addEventListener('click', () => {
-            document.getElementById('other-response-input').style.display = 'none';
-            document.getElementById('proposal-options-btns').style.display = 'flex';
-        });
-        document.getElementById('confirm-other-response')?.addEventListener('click', () => {
-            const inp = document.getElementById('other-response-text');
-            const text = inp ? inp.value.trim() : '';
-            if (!text) return;
-            applyResponse(text, energyData.pendingProposal);
         });
 
         // 写总结

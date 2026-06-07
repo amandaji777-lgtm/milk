@@ -429,9 +429,9 @@ const LIBRARY_CONFIG = {
         ]
     },
     atmosphere: {
-        title: "氛围感",
+        title: "拍一拍",
         tabs: [
-            { id: 'pokes', name: '氛围感', mode: 'list' }
+            { id: 'pokes', name: '拍一拍', mode: 'list' }
         ]
     }
 };
