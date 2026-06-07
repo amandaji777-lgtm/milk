@@ -1395,10 +1395,53 @@
 
     <div class="modal" id="mood-modal">
        <div class="modal-content">
-        <div class="mood-header-actions">
-            <div class="modal-title" style="margin-bottom:0; border:none; padding:0;">
-                <i class="fas fa-book-open"></i><span>心晴手帐</span>
+        <div class="modal-title">
+            <i class="fas fa-bolt"></i><span>能量状态</span>
+            <span id="energy-badge" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--accent-color);margin-left:8px;display:inline-block;"></span>
+        </div>
+
+        <!-- 我的状态 -->
+        <div style="background:var(--primary-bg);border-radius:12px;padding:12px;margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">我的状态</div>
+            <div id="my-energy-display" style="font-size:14px;color:var(--text-primary);min-height:20px;">（未设置）</div>
+            <div id="my-energy-time" style="font-size:11px;color:var(--text-secondary);margin-top:4px;"></div>
+            <button id="edit-my-energy-btn" style="margin-top:8px;background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">编辑</button>
+        </div>
+
+        <!-- 他的状态 -->
+        <div style="background:var(--primary-bg);border-radius:12px;padding:12px;margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">他的状态</div>
+            <div id="partner-energy-display" style="font-size:14px;color:var(--text-primary);min-height:20px;">（未设置）</div>
+            <div id="partner-energy-time" style="font-size:11px;color:var(--text-secondary);margin-top:4px;"></div>
+            <button id="refresh-partner-energy-btn" style="margin-top:8px;background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">随机更新</button>
+        </div>
+
+        <!-- 我们的状态 -->
+        <div style="background:var(--primary-bg);border-radius:12px;padding:12px;margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">我们的状态</div>
+            <div id="our-energy-display" style="font-size:14px;color:var(--text-primary);min-height:20px;">（未设置）</div>
+            <div id="our-energy-time" style="font-size:11px;color:var(--text-secondary);margin-top:4px;"></div>
+            <div id="pending-proposal-notice" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(var(--accent-color-rgb),0.1);border-radius:8px;font-size:12px;color:var(--accent-color);">
+                有待回应的提议 · <button id="respond-proposal-btn" style="background:none;border:none;color:var(--accent-color);font-size:12px;cursor:pointer;text-decoration:underline;">查看</button>
             </div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                <button id="propose-energy-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">提议</button>
+                <button id="partner-propose-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">他发起提议</button>
+                <button id="write-summary-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">写总结</button>
+                <button id="view-timeline-btn" style="background:none;border:1px solid var(--border-color);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--text-secondary);cursor:pointer;">时间轴</button>
+            </div>
+            <div id="recent-summary-box" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(var(--accent-color-rgb),0.06);border-radius:8px;">
+                <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">最近总结</div>
+                <div id="recent-summary-text" style="font-size:13px;color:var(--text-primary);"></div>
+                <div id="recent-summary-reply" style="font-size:12px;color:var(--text-secondary);margin-top:4px;font-style:italic;"></div>
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-secondary" id="close-mood">关闭</button>
+        </div>
+       </div>
+    </div>
             <div style="display:flex; gap:8px;">
                 <button class="view-switch-btn active" id="btn-view-calendar">
                     <i class="fas fa-calendar-alt"></i> 日历
@@ -1423,25 +1466,95 @@
             <div class="calendar-grid" id="calendar-grid"></div>
         </div>
     
-        <div id="mood-stats-view" class="mood-view-section hidden-view">
-            <div id="mood-stats-container" class="mood-stats-card" style="border:none; box-shadow:none; padding:0; background:transparent;">
+
+    <!-- 编辑我的状态 -->
+    <div class="modal" id="edit-my-energy-modal" style="z-index:2100;">
+        <div class="modal-content">
+            <div class="modal-title"><i class="fas fa-pen"></i><span>编辑我的状态</span></div>
+            <textarea id="my-energy-input" class="modal-textarea" placeholder="描述你现在的状态..." maxlength="100" style="min-height:80px;resize:none;"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="cancel-my-energy">取消</button>
+                <button class="modal-btn modal-btn-primary" id="save-my-energy">保存</button>
             </div>
         </div>
-
-        <div id="mood-trash-view" class="mood-view-section hidden-view">
-            <div id="mood-trash-list" style="padding:0 14px;"></div>
-        </div>
-    
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-secondary" id="mood-export-btn" style="flex:1;">导出</button>
-            <button class="modal-btn modal-btn-secondary" id="mood-import-btn" style="flex:1;">导入</button>
-            <input type="file" id="mood-import-file-input" accept="application/json" style="display:none;">
-            <button class="modal-btn modal-btn-secondary" id="close-mood">关闭</button>
-        </div>
-       </div>
     </div>
 
-    <div class="mood-selector-overlay" id="mood-selector-overlay">
+    <!-- 我发起提议 -->
+    <div class="modal" id="propose-energy-modal" style="z-index:2100;">
+        <div class="modal-content">
+            <div class="modal-title"><i class="fas fa-paper-plane"></i><span>发起提议</span></div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">提议将我们的状态改为：</div>
+            <input type="text" id="propose-content-input" class="modal-input" placeholder="输入提议的状态内容..." maxlength="50">
+            <div style="font-size:12px;color:var(--text-secondary);margin:10px 0 6px;">自定义选项（他回应时可选）</div>
+            <div id="propose-options-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="new-propose-option" class="modal-input" placeholder="添加选项..." maxlength="20" style="flex:1;">
+                <button id="add-propose-option-btn" class="modal-btn modal-btn-primary" style="padding:8px 14px;flex-shrink:0;">+</button>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="cancel-propose">取消</button>
+                <button class="modal-btn modal-btn-primary" id="send-propose-btn">发起</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 他发起提议（模拟） -->
+    <div class="modal" id="partner-propose-modal" style="z-index:2100;">
+        <div class="modal-content">
+            <div class="modal-title"><i class="fas fa-paper-plane"></i><span>他发起提议</span></div>
+            <input type="text" id="partner-propose-input" class="modal-input" placeholder="提议的状态内容..." maxlength="50">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="cancel-partner-propose">取消</button>
+                <button class="modal-btn modal-btn-primary" id="send-partner-propose-btn">发起</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 回应提议 -->
+    <div class="modal" id="respond-proposal-modal" style="z-index:2100;">
+        <div class="modal-content">
+            <div class="modal-title"><i class="fas fa-reply"></i><span>回应提议</span></div>
+            <div style="font-size:13px;color:var(--text-primary);margin-bottom:12px;">提议将状态改为：<strong id="proposal-content-display"></strong></div>
+            <div id="proposal-options-btns" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="other-response-input" style="display:none;margin-top:10px;">
+                <input type="text" id="other-response-text" class="modal-input" placeholder="输入自定义回应内容..." maxlength="50">
+                <div class="modal-buttons" style="margin-top:8px;">
+                    <button class="modal-btn modal-btn-secondary" id="cancel-other-response">取消</button>
+                    <button class="modal-btn modal-btn-primary" id="confirm-other-response">确认</button>
+                </div>
+            </div>
+            <div class="modal-buttons" style="margin-top:10px;">
+                <button class="modal-btn modal-btn-secondary" id="cancel-respond">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 写总结 -->
+    <div class="modal" id="write-summary-modal" style="z-index:2100;">
+        <div class="modal-content">
+            <div class="modal-title"><i class="fas fa-feather-alt"></i><span>写总结</span></div>
+            <textarea id="summary-input" class="modal-textarea" placeholder="写下对当前状态的总结..." maxlength="200" style="min-height:100px;resize:none;"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="cancel-summary">取消</button>
+                <button class="modal-btn modal-btn-primary" id="save-summary-btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间轴 -->
+    <div class="modal" id="energy-timeline-modal" style="z-index:2100;">
+        <div class="modal-content">
+            <div class="modal-title"><i class="fas fa-stream"></i><span>状态时间轴</span></div>
+            <div id="energy-timeline-list" style="max-height:60vh;overflow-y:auto;padding:4px 0;"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="close-timeline">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 旧mood overlay占位（保持兼容） -->
+    <div id="mood-selector-overlay" style="display:none;"></div>
+    <div style="display:none;" id="_old-mood-hidden">
         <div class="mood-selector-card" id="mood-editor-view">
             <h3 id="mood-selector-date">--月--日</h3>
             
@@ -1991,6 +2104,7 @@
     <script src="js/features/theme-editor.js"></script>
     <script src="js/features/call.js"></script>
     <script src="js/features/notes.js"></script>
+    <script src="js/features/energy.js"></script>
 
     <!-- == 合并模块 == -->
     <script src="js/games.js"></script> 
