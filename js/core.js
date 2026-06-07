@@ -1526,7 +1526,6 @@ window.simulateReply = function() {
         }
     }
 
-    const replyCount = Math.random() < 0.75 ? 1: (Math.random() < 0.95 ? 2: 3);
     if (!customReplies || customReplies.length === 0) {
         showNotification('回复库为空，请先到「自定义回复」中添加内容', 'info', 3500);
         return;
@@ -1550,60 +1549,38 @@ window.simulateReply = function() {
         return;
     }
 
+    // 随机抽取 1-3 张字卡，空格拼接成一条消息
+    const cardCount = Math.floor(Math.random() * 3) + 1;
+    const shuffled = [...replyPoolOnce].sort(() => Math.random() - 0.5);
+    const pickedCards = shuffled.slice(0, Math.min(cardCount, shuffled.length));
+    if (!pickedCards.length) return;
+    const replyText = pickedCards.join(' ');
+
     showTypingIndicator();
-    let delay = 0;
     const recentUserMsgs = settings.replyEnabled
         ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
         : [];
-    for (let i = 0; i < replyCount; i++) {
-        const delayRange = settings.replyDelayMax - settings.replyDelayMin;
-        delay += settings.replyDelayMin + Math.random() * delayRange;
-        setTimeout(() => {
-            try {
-                const replyPool = replyPoolOnce;
-                let replyText = '';
-                for (let t = 0; t < 6; t++) {
-                    const picked = replyPool[Math.floor(Math.random() * replyPool.length)];
-                    if (picked && String(picked).trim()) {
-                        replyText = String(picked).trim();
-                        break;
-                    }
-                }
-                if (!replyText && i === replyCount - 1) {
-                    (function(){try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e){}var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
-                    return;
-                }
-
-                let disabledStickerItems = new Set();
-                try {
-                    const raw = localStorage.getItem('disabledStickerItems');
-                    if (raw) disabledStickerItems = new Set(JSON.parse(raw));
-                } catch (e) {}
-                const enabledStickerPool = (stickerLibrary || []).filter(s => !disabledStickerItems.has(s));
-                const shouldSendSticker = enabledStickerPool.length > 0 && Math.random() < 0.2;
-
+    const delayRange = settings.replyDelayMax - settings.replyDelayMin;
+    const delay = settings.replyDelayMin + Math.random() * delayRange;
+    setTimeout(() => {
+        try {
                 let finalText = replyText;
-                let separateEmoji = null;
                 if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
                     const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
                     if (settings.emojiMixEnabled !== false) {
-                        finalText = Math.random() < 0.5
-                            ? emoji + ' ' + replyText
-                            : replyText + ' ' + emoji;
-                    } else {
-                        separateEmoji = emoji;
+                        finalText = Math.random() < 0.5 ? emoji + ' ' + replyText : replyText + ' ' + emoji;
                     }
                 }
 
                 addMessage({
-                    id: Date.now() + i,
+                    id: Date.now(),
                     sender: settings.partnerName || '对方',
                     text: finalText,
                     timestamp: new Date(),
                     status: 'received',
                     favorited: false,
                     note: null,
-                    replyTo: (i === 0 && recentUserMsgs.length > 0 && Math.random() < 0.3)
+                    replyTo: (recentUserMsgs.length > 0 && Math.random() < 0.3)
                         ? (function(){ const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
                         : null,
                     type: 'normal'
@@ -1613,66 +1590,27 @@ window.simulateReply = function() {
                 }
                 playSound('send');
 
-                if (shouldSendSticker) {
-                    const randomSticker = enabledStickerPool[Math.floor(Math.random() * enabledStickerPool.length)];
-                    setTimeout(() => {
-                        addMessage({
-                            id: Date.now() + i + 2000,
-                            sender: settings.partnerName || '对方',
-                            text: '',
-                            timestamp: new Date(),
-                            image: randomSticker,
-                            status: 'received',
-                            favorited: false,
-                            note: null,
-                            type: 'normal'
-                        });
-                        playSound('send');
-                        if (typeof window._sendPartnerNotification === 'function') {
-                            window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
+                (function() {
+                    try {
+                        if (window._typingIndicatorAutoHideTimer) {
+                            clearTimeout(window._typingIndicatorAutoHideTimer);
+                            window._typingIndicatorAutoHideTimer = null;
                         }
-                    }, 400 + Math.random() * 600);
-                }
-
-                if (separateEmoji) {
-                    setTimeout(() => {
-                        addMessage({
-                            id: Date.now() + i + 1000,
-                            sender: settings.partnerName || '对方',
-                            text: separateEmoji,
-                            timestamp: new Date(),
-                            status: 'received',
-                            favorited: false,
-                            note: null,
-                            type: 'normal'
-                        });
-                        playSound('send');
-                    }, 300 + Math.random() * 400);
-                }
-
-                if (i === replyCount - 1) {
-                    (function() {
-                        try {
-                            if (window._typingIndicatorAutoHideTimer) {
-                                clearTimeout(window._typingIndicatorAutoHideTimer);
-                                window._typingIndicatorAutoHideTimer = null;
-                            }
-                        } catch (e) {}
-                        var _tiW = document.getElementById('typing-indicator-wrapper');
-                        if (_tiW) {
-                            var _tiInner = _tiW.querySelector('.typing-indicator');
-                            if (_tiInner) {
-                                _tiInner.classList.add('hiding');
-                                setTimeout(function() {
-                                    _tiW.style.display = 'none';
-                                    if (_tiInner) _tiInner.classList.remove('hiding');
-                                }, 240);
-                            } else {
+                    } catch (e) {}
+                    var _tiW = document.getElementById('typing-indicator-wrapper');
+                    if (_tiW) {
+                        var _tiInner = _tiW.querySelector('.typing-indicator');
+                        if (_tiInner) {
+                            _tiInner.classList.add('hiding');
+                            setTimeout(function() {
                                 _tiW.style.display = 'none';
-                            }
+                                if (_tiInner) _tiInner.classList.remove('hiding');
+                            }, 240);
+                        } else {
+                            _tiW.style.display = 'none';
                         }
-                    })();
-                }
+                    }
+                })();
             } catch (e) {
                 console.error('[simulateReply] 渲染/回填出错:', e);
                 try {
@@ -1684,7 +1622,6 @@ window.simulateReply = function() {
                 } catch (e2) {}
             }
         }, delay);
-    }
 };
 
 function showModal(modalElement, focusElement = null) {
