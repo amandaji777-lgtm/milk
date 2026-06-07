@@ -233,9 +233,6 @@
                     <button class="collapsed-extra-btn" id="combo-btn-extra" title="表情拍一拍">
                         <i class="fas fa-laugh-beam"></i>
                     </button>
-                    <button class="collapsed-extra-btn" id="batch-btn-extra" title="批量发送">
-                        <i class="fas fa-layer-group"></i>
-                    </button>
                     <button class="collapsed-extra-btn" title="字卡回复" onclick="(function(){document.getElementById('collapsed-extras-panel').style.display='none';document.getElementById('collapse-expand-btn').classList.remove('open');showModal(document.getElementById('custom-replies-modal'));})();">
                         <i class="fas fa-comment-dots"></i>
                     </button>
@@ -266,8 +263,7 @@
     <textarea class="message-input" id="message-input" placeholder="" rows="1"></textarea>
     
     <div class="input-buttons">
-    <button class="continue-btn input-btn" id="continue-btn" title="让对方继续说"><i class="fas fa-ellipsis-h"></i></button>
-        <button class="batch-btn input-btn collapse-hideable" id="batch-btn" title="批量发送模式"><i class="fas fa-layer-group"></i></button>
+        <button class="input-btn collapse-hideable" id="note-quick-btn" title="写小纸条" onclick="window.openWriteNote&&window.openWriteNote()" style="background:rgba(var(--accent-color-rgb),0.12);color:var(--accent-color);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;"><i class="fas fa-sticky-note"></i></button>
         <button class="send-btn input-btn" id="send-btn" title="发送消息"><i class="fas fa-paper-plane"></i></button>
         
         <div class="sticker-picker-popover" id="user-sticker-picker">
