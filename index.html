@@ -84,7 +84,7 @@
             <div class="header-actions">
                 <button id="session-manager-btn" class="action-btn" title="会话管理"><i class="fas fa-comments"></i></button>
                 <button id="daily-greeting-btn" class="action-btn" title="今日公告" onclick="reopenDailyGreeting()"><i class="fas fa-newspaper"></i></button>
-                <button id="settings-btn" class="action-btn" title="设置"><i class="fas fa-cog"></i></button>
+                <button id="settings-btn" class="action-btn" title="设置" onclick="showModal(document.getElementById('settings-modal'))"><i class="fas fa-cog"></i></button>
             </div>
              <div class="user-info">
                 <div class="username" id="my-name">
@@ -488,12 +488,12 @@
                     <i class="fas fa-database"></i>
                     <span>数据管理</span>
                 </div>
-                <div class="settings-card" id="notes-settings">
+                <div class="settings-card" id="notes-settings" onclick="(function(){hideModal(document.getElementById('settings-modal'));showModal(document.getElementById('notes-modal'));})()" style="position:relative;cursor:pointer;">
                     <i class="fas fa-sticky-note"></i>
                     <span>小纸条</span>
                     <span id="notes-settings-badge" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--accent-color);position:absolute;top:8px;right:8px;"></span>
                 </div>
-                <div class="settings-card" id="energy-settings" style="position:relative;">
+                <div class="settings-card" id="energy-settings" onclick="(function(){hideModal(document.getElementById('settings-modal'));showModal(document.getElementById('energy-modal'));})()" style="position:relative;cursor:pointer;">
                     <i class="fas fa-bolt"></i>
                     <span>能量状态</span>
                     <span id="energy-badge" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--accent-color);position:absolute;top:8px;right:8px;"></span>
